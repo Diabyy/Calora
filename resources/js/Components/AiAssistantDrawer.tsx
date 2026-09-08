@@ -120,53 +120,74 @@ export default function AiAssistantDrawer() {
 
     return (
         <>
-            {/* Floating Action Button */}
+            {/* Floating Action Button (Positioned safely above mobile bottom bar) */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 p-4 text-white shadow-xl hover:shadow-2xl hover:from-emerald-500 hover:to-teal-400 transition-all transform hover:-translate-y-1 group"
+                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 rounded-2xl bg-[#111827] border border-white/15 p-3.5 sm:p-4 text-white shadow-2xl hover:bg-[#1e293b] active:scale-95 transition-all group backdrop-blur-md"
+                    aria-label="Buka Tanya Calora AI"
+                    title="Tanya Calora AI"
                 >
                     <div className="relative">
-                        <Sparkles className="h-6 w-6 animate-pulse text-amber-200" />
-                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-300"></span>
+                        <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-[#c8f169]" />
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c8f169] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c8f169]"></span>
                         </span>
                     </div>
-                    <span className="font-bold text-sm hidden sm:inline">Tanya Calora AI</span>
+                    <span className="font-athletic text-sm tracking-wider hidden sm:inline text-white">
+                        TANYA AI
+                    </span>
                 </button>
             )}
 
-            {/* Chat Drawer */}
+            {/* Mobile Backdrop Overlay */}
             {isOpen && (
-                <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md h-[34rem] rounded-3xl bg-white border border-gray-200 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
+                <div
+                    className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm sm:hidden transition-opacity"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            {/* Chat Drawer: Mobile Bottom Sheet + Desktop Floating Card */}
+            {isOpen && (
+                <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:bottom-6 sm:right-6 z-50 w-full sm:w-[420px] sm:max-w-md h-[85vh] sm:h-[34rem] rounded-t-[2rem] sm:rounded-3xl bg-white border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
+                    {/* Mobile Sheet Drag Handle Pill */}
+                    <div
+                        className="py-2.5 sm:hidden flex justify-center cursor-pointer bg-[#111827]"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <div className="w-12 h-1.5 bg-slate-500 rounded-full" />
+                    </div>
+
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 p-4 text-white flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <div className="rounded-xl bg-white/20 p-2 backdrop-blur-sm">
-                                <Sparkles className="h-5 w-5 text-amber-200" />
+                    <div className="bg-[#111827] px-5 py-4 text-white flex items-center justify-between border-b border-white/10">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-white/10 p-2 backdrop-blur-sm border border-white/10">
+                                <Sparkles className="h-5 w-5 text-[#c8f169]" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-sm flex items-center gap-1.5">
-                                    Calora AI Assistant
-                                    <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-100">
-                                        Active
+                                <h3 className="font-athletic text-lg tracking-wider flex items-center gap-2">
+                                    CALORA AI ASSISTANT
+                                    <span className="rounded-full bg-[#c8f169]/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#c8f169] border border-[#c8f169]/30">
+                                        Free Tier
                                     </span>
                                 </h3>
-                                <p className="text-[11px] text-emerald-100/80">Ahli Gizi & Kebugaran Pribadimu</p>
+                                <p className="text-[11px] text-slate-400 font-medium">Ahli Gizi & Kebugaran Pribadimu</p>
                             </div>
                         </div>
 
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="rounded-full p-1.5 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                            className="rounded-full p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                            aria-label="Tutup Calora AI"
                         >
                             <X className="h-5 w-5" />
                         </button>
                     </div>
 
                     {/* Messages Container */}
-                    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50/60">
+                    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#f8fafc]">
                         {messages.map((msg) => (
                             <div
                                 key={msg.id}
@@ -177,24 +198,24 @@ export default function AiAssistantDrawer() {
                                 <div
                                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                                         msg.sender === 'user'
-                                            ? 'bg-emerald-600 text-white'
+                                            ? 'bg-[#111827] text-white'
                                             : 'bg-emerald-100 text-emerald-800'
                                     }`}
                                 >
-                                    {msg.sender === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                                    {msg.sender === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4 text-emerald-700" />}
                                 </div>
 
                                 <div
-                                    className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm whitespace-pre-line ${
+                                    className={`max-w-[82%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm whitespace-pre-line ${
                                         msg.sender === 'user'
-                                            ? 'bg-emerald-600 text-white rounded-tr-none font-medium'
-                                            : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none'
+                                            ? 'bg-[#111827] text-white rounded-tr-none font-medium'
+                                            : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                                     }`}
                                 >
                                     {msg.text}
                                     <span
-                                        className={`block text-[9px] mt-1 text-right ${
-                                            msg.sender === 'user' ? 'text-emerald-200' : 'text-gray-400'
+                                        className={`block text-[9px] mt-1 text-right font-medium ${
+                                            msg.sender === 'user' ? 'text-slate-400' : 'text-slate-400'
                                         }`}
                                     >
                                         {msg.timestamp}
@@ -204,9 +225,9 @@ export default function AiAssistantDrawer() {
                         ))}
 
                         {loading && (
-                            <div className="flex items-center gap-2 text-xs text-gray-400 py-1">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 py-1 bg-white p-3 rounded-2xl border border-slate-100 max-w-[80%] shadow-sm">
                                 <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
-                                <span>Calora AI sedang menganalisa data...</span>
+                                <span className="font-medium">Calora AI sedang menganalisis data...</span>
                             </div>
                         )}
 
@@ -214,39 +235,41 @@ export default function AiAssistantDrawer() {
                     </div>
 
                     {/* Suggested Prompt Chips */}
-                    <div className="p-2 border-t border-gray-100 bg-white flex gap-1.5 overflow-x-auto no-scrollbar">
+                    <div className="px-3 py-2 border-t border-slate-100 bg-white flex gap-1.5 overflow-x-auto no-scrollbar">
                         {suggestedPrompts.map((prompt, idx) => (
                             <button
                                 key={idx}
                                 type="button"
                                 onClick={() => handleSendMessage(prompt)}
-                                className="whitespace-nowrap rounded-xl bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1 text-[11px] font-medium text-gray-600 transition-colors border border-transparent hover:border-emerald-200"
+                                className="whitespace-nowrap rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-3 py-1.5 text-[11px] font-bold text-slate-600 transition-colors border border-transparent hover:border-emerald-200 shrink-0"
                             >
                                 {prompt}
                             </button>
                         ))}
                     </div>
 
-                    {/* Input Field */}
+                    {/* Input Field with Safe Area Inset Padding */}
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
                             handleSendMessage();
                         }}
-                        className="p-3 border-t border-gray-100 bg-white flex items-center gap-2"
+                        className="p-3 border-t border-slate-100 bg-white flex items-center gap-2 pb-safe"
+                        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
                     >
                         <input
                             type="text"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             placeholder="Tanyakan saran makanan atau olahraga..."
-                            className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2 text-xs focus:border-emerald-500 focus:ring-emerald-500"
+                            className="flex-1 rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:ring-slate-900"
                             disabled={loading}
                         />
                         <button
                             type="submit"
                             disabled={loading || !inputText.trim()}
-                            className="rounded-xl bg-emerald-600 p-2.5 text-white hover:bg-emerald-500 disabled:opacity-50 transition-all shadow-sm"
+                            className="rounded-2xl bg-slate-950 p-2.5 text-white hover:bg-[#fc4c02] disabled:opacity-40 transition-all shadow-sm flex items-center justify-center shrink-0"
+                            aria-label="Kirim Pesan"
                         >
                             <Send className="h-4 w-4" />
                         </button>
