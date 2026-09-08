@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     ArrowRight,
@@ -103,10 +103,37 @@ export default function Dashboard({
     today_activities,
     today_logs,
 }: Props) {
+    const { auth } = usePage<any>().props;
+    const user = auth?.user;
+    const firstName = user?.name ? user.name.trim().split(' ')[0].toUpperCase() : 'ATHLETE';
+
     const [showWhatToEatModal, setShowWhatToEatModal] = useState(false);
     const proteinPercent = Math.min(100, Math.round((balance.consumed_protein / balance.target_protein) * 100));
     const carbsPercent = Math.min(100, Math.round((balance.consumed_carbs / balance.target_carbs) * 100));
     const fatPercent = Math.min(100, Math.round((balance.consumed_fat / balance.target_fat) * 100));
+
+    const getDynamicGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour >= 4 && hour < 11) {
+            return `SELAMAT PAGI, ${firstName}.`;
+        }
+        if (hour >= 11 && hour < 15) {
+            return `SELAMAT SIANG, ${firstName}.`;
+        }
+        if (hour >= 15 && hour < 18.5) {
+            return `SELAMAT SORE, ${firstName}.`;
+        }
+        return `SELAMAT MALAM, ${firstName}.`;
+    };
+
+    const getFormattedToday = () => {
+        return new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+    };
 
     return (
         <AuthenticatedLayout
@@ -114,10 +141,14 @@ export default function Dashboard({
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Tuesday / Field note</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">
+                                {getFormattedToday()} · Field Note
+                            </span>
                             {streak > 0 && <span className="rounded-full bg-[#dff58d] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900">{streak} day streak</span>}
                         </div>
-                        <h1 className="mt-1 truncate font-athletic text-3xl leading-none text-slate-950 sm:text-4xl">GOOD MORNING, ATHLETE.</h1>
+                        <h1 className="mt-1 truncate font-athletic text-3xl leading-none text-slate-950 sm:text-4xl">
+                            {getDynamicGreeting()}
+                        </h1>
                     </div>
                 </div>
             }

@@ -21,7 +21,8 @@ import {
     Sunrise,
     Sun,
     Moon,
-    Coffee
+    Coffee,
+    RotateCcw
 } from 'lucide-react';
 import { visualAssets } from '@/data/visualAssets';
 
@@ -102,11 +103,75 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
         snack: { label: 'Camilan & Minuman', icon: Coffee, time: 'Sepanjang Hari' },
     };
 
+    // Safe local date math helpers (immune to UTC off-by-one shifts)
+    const toLocalDateString = (d: Date): string => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const parseLocalDate = (dateStr: string): Date => {
+        const parts = (dateStr || '').split('-').map(Number);
+        if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+        return new Date();
+    };
+
+    const getTodayString = (): string => toLocalDateString(new Date());
+
+    const formatHumanDate = (dateStr: string): string => {
+        const todayStr = getTodayString();
+        const parsed = parseLocalDate(dateStr);
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = toLocalDateString(yesterday);
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = toLocalDateString(tomorrow);
+
+        const dayName = parsed.toLocaleDateString('id-ID', { weekday: 'short' });
+        const formattedShort = parsed.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+        if (dateStr === todayStr) {
+            return `Hari Ini (${dayName}, ${formattedShort})`;
+        }
+        if (dateStr === yesterdayStr) {
+            return `Kemarin (${dayName}, ${formattedShort})`;
+        }
+        if (dateStr === tomorrowStr) {
+            return `Besok (${dayName}, ${formattedShort})`;
+        }
+
+        return parsed.toLocaleDateString('id-ID', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        });
+    };
+
     const handleDateChange = (days: number) => {
-        const current = new Date(date);
+        const current = parseLocalDate(date);
         current.setDate(current.getDate() + days);
-        const nextDate = current.toISOString().split('T')[0];
+        const nextDate = toLocalDateString(current);
         router.visit(route('nutrition.index', { date: nextDate }));
+    };
+
+    const handleDateSelect = (selectedDate: string) => {
+        if (selectedDate && selectedDate !== date) {
+            router.visit(route('nutrition.index', { date: selectedDate }));
+        }
+    };
+
+    const handleJumpToToday = () => {
+        const todayStr = getTodayString();
+        if (date !== todayStr) {
+            router.visit(route('nutrition.index', { date: todayStr }));
+        }
     };
 
     // AI File Upload and Analysis
@@ -366,23 +431,55 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                     </div>
 
                     {/* Date Navigation */}
-                    <div className="flex items-center gap-1.5 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-sm">
-                        <button
-                            onClick={() => handleDateChange(-1)}
-                            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <div className="flex items-center gap-2 px-3 text-xs font-bold text-slate-800">
-                            <Calendar className="h-4 w-4 text-emerald-600" />
-                            <span className="font-display text-sm tracking-wide">{date}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {date !== getTodayString() && (
+                            <button
+                                type="button"
+                                onClick={handleJumpToToday}
+                                className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-black uppercase tracking-wider text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-1.5 shadow-sm"
+                                title="Kembali ke Hari Ini"
+                            >
+                                <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>Hari Ini</span>
+                            </button>
+                        )}
+
+                        <div className="flex items-center gap-1.5 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-sm">
+                            <button
+                                type="button"
+                                onClick={() => handleDateChange(-1)}
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                title="1 Hari Sebelumnya"
+                                aria-label="1 Hari Sebelumnya"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+
+                            {/* Clickable Date Label with native hidden Date Picker */}
+                            <label className="relative flex items-center gap-2 px-3 py-1 text-xs font-bold text-slate-800 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors select-none">
+                                <Calendar className="h-4 w-4 text-emerald-600 shrink-0" />
+                                <span className="font-display text-sm tracking-wide whitespace-nowrap">
+                                    {formatHumanDate(date)}
+                                </span>
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => handleDateSelect(e.target.value)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    aria-label="Pilih Tanggal Kalender"
+                                />
+                            </label>
+
+                            <button
+                                type="button"
+                                onClick={() => handleDateChange(1)}
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                title="1 Hari Berikutnya"
+                                aria-label="1 Hari Berikutnya"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
                         </div>
-                        <button
-                            onClick={() => handleDateChange(1)}
-                            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
                     </div>
                 </div>
             }
