@@ -1,0 +1,20 @@
+{
+    "agents": [
+        "claude_code",
+        "codex",
+        "kiro",
+        "opencode"
+    ],
+    "cloud": false,
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch": false,
+    "sail": false,
+    "skills": [
+        "infer-conventions",
+        "laravel-best-practices",
+        "testing-best-practices",
+        "inertia-react-development",
+        "tailwindcss-development"
+    ]
+}
