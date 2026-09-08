@@ -34,7 +34,15 @@ export default function Authenticated({
         { label: 'Community', href: route('community.index'), active: route().current('community.*'), icon: Users },
     ];
 
-    const mobileNavigation = navigation.slice(0, 4);
+    const mobileLeftNavigation = [
+        { label: 'Overview', href: route('dashboard'), active: route().current('dashboard'), icon: Home },
+        { label: 'Nutrition', href: route('nutrition.index'), active: route().current('nutrition.*'), icon: Camera },
+    ];
+
+    const mobileRightNavigation = [
+        { label: 'Activities', href: route('activities.index'), active: route().current('activities.*'), icon: Activity },
+        { label: 'Progress', href: route('progress.index'), active: route().current('progress.*'), icon: BarChart3 },
+    ];
 
     return (
         <div className="min-h-screen bg-[#f4f2ed] text-slate-900">
@@ -185,23 +193,62 @@ export default function Authenticated({
                     )}
                 </header>
 
-                <main className="pb-24 md:pb-10">{children}</main>
+                <main className="pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] md:pb-10">{children}</main>
             </div>
 
-            <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white/95 px-2 py-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
-                {mobileNavigation.map((item) => {
+            {/* Mobile Bottom Navigation with Center FAB (Nike / Strava style) */}
+            <nav
+                className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-slate-200/90 bg-white/95 px-3 pt-1.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden pb-safe"
+                style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+                {mobileLeftNavigation.map((item) => {
                     const Icon = item.icon;
 
                     return (
-                        <Link key={item.label} href={item.href} className={`flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-bold ${item.active ? 'text-slate-900' : 'text-slate-400'}`}>
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition-colors ${
+                                item.active ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                        >
                             <Icon className={`h-5 w-5 ${item.active ? 'text-[#fc4c02]' : ''}`} strokeWidth={item.active ? 2.4 : 1.8} />
-                            {item.label}
+                            <span>{item.label}</span>
                         </Link>
                     );
                 })}
-                <Link href={route('activities.index')} className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#f4f2ed] bg-[#c8f169] text-[#111827] shadow-lg shadow-lime-900/20">
-                    <Play className="h-5 w-5 fill-current" />
-                </Link>
+
+                {/* Center Floating Action Button (Record GPS) */}
+                <div className="flex flex-col items-center -mt-6 px-1">
+                    <Link
+                        href={route('activities.index')}
+                        className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#f4f2ed] bg-[#c8f169] text-[#111827] shadow-lg shadow-lime-900/25 active:scale-95 transition-transform"
+                        aria-label="Mulai Sesi Olahraga GPS"
+                        title="Record GPS"
+                    >
+                        <Play className="h-5 w-5 fill-current ml-0.5" />
+                    </Link>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-800 mt-0.5">
+                        Record
+                    </span>
+                </div>
+
+                {mobileRightNavigation.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition-colors ${
+                                item.active ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                        >
+                            <Icon className={`h-5 w-5 ${item.active ? 'text-[#fc4c02]' : ''}`} strokeWidth={item.active ? 2.4 : 1.8} />
+                            <span>{item.label}</span>
+                        </Link>
+                    );
+                })}
             </nav>
 
             <PwaInstallPrompt />

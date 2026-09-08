@@ -585,31 +585,34 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                 </div>
 
                 {/* Nike NRC Style HUD Live Metrics */}
-                <div className="p-6 space-y-6 bg-slate-950 border-t border-slate-800">
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
-                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">WAKTU</span>
-                            <p className="font-athletic text-3xl sm:text-4xl text-white mt-1">{formatTimer(seconds)}</p>
+                <div
+                    className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-slate-950 border-t border-slate-800 pb-safe"
+                    style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+                >
+                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center">
+                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
+                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">WAKTU</span>
+                            <p className="font-athletic text-2xl sm:text-4xl text-white mt-0.5 sm:mt-1 truncate">{formatTimer(seconds)}</p>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
-                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">JARAK</span>
-                            <p className="font-athletic text-3xl sm:text-4xl text-emerald-400 mt-1">
+                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
+                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">JARAK</span>
+                            <p className="font-athletic text-2xl sm:text-4xl text-emerald-400 mt-0.5 sm:mt-1 truncate">
                                 {(distanceMeters / 1000).toFixed(2)}
                             </p>
-                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">KM</span>
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
-                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">PACE</span>
-                            <p className="font-athletic text-3xl sm:text-4xl text-sky-400 mt-1">{currentPace()}</p>
-                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">/KM</span>
+                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
+                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">PACE</span>
+                            <p className="font-athletic text-2xl sm:text-4xl text-sky-400 mt-0.5 sm:mt-1 truncate">{currentPace()}</p>
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">/KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
-                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">KALORI</span>
-                            <p className="font-athletic text-3xl sm:text-4xl text-amber-400 mt-1">{estimatedCalories()}</p>
-                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">KCAL</span>
+                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
+                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">KALORI</span>
+                            <p className="font-athletic text-2xl sm:text-4xl text-amber-400 mt-0.5 sm:mt-1 truncate">{estimatedCalories()}</p>
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">KCAL</span>
                         </div>
                     </div>
 
