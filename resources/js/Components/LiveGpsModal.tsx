@@ -340,9 +340,9 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         setStatus('finished');
 
         const sportTitles = {
-            running: '🏃 Live Run Session',
-            cycling: '🚴 Live Cycling Session',
-            walking: '🚶 Live Walk Session',
+            running: 'Sesi Lari Outdoor',
+            cycling: 'Sesi Bersepeda',
+            walking: 'Sesi Jalan Kaki',
         };
 
         router.post(
@@ -431,50 +431,50 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                     )}
                 </div>
 
-                {/* HUD Live Metrics */}
-                <div className="p-5 space-y-5 bg-slate-900">
+                {/* Nike NRC Style HUD Live Metrics */}
+                <div className="p-6 space-y-6 bg-slate-950 border-t border-slate-800">
                     <div className="grid grid-cols-4 gap-2 text-center">
-                        <div className="rounded-2xl bg-slate-800/80 p-3 border border-slate-700/50">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">WAKTU</span>
-                            <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{formatTimer(seconds)}</p>
+                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
+                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">WAKTU</span>
+                            <p className="font-athletic text-3xl sm:text-4xl text-white mt-1">{formatTimer(seconds)}</p>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-800/80 p-3 border border-slate-700/50">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">JARAK</span>
-                            <p className="text-xl sm:text-2xl font-black text-emerald-400 mt-0.5">
+                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
+                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">JARAK</span>
+                            <p className="font-athletic text-3xl sm:text-4xl text-emerald-400 mt-1">
                                 {(distanceMeters / 1000).toFixed(2)}
                             </p>
-                            <span className="text-[9px] text-slate-400 block">KM</span>
+                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-800/80 p-3 border border-slate-700/50">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">PACE</span>
-                            <p className="text-xl sm:text-2xl font-black text-sky-400 mt-0.5">{currentPace()}</p>
-                            <span className="text-[9px] text-slate-400 block">/KM</span>
+                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
+                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">PACE</span>
+                            <p className="font-athletic text-3xl sm:text-4xl text-sky-400 mt-1">{currentPace()}</p>
+                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">/KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-800/80 p-3 border border-slate-700/50">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">KALORI</span>
-                            <p className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">{estimatedCalories()}</p>
-                            <span className="text-[9px] text-slate-400 block">KCAL</span>
+                        <div className="rounded-2xl bg-slate-900/90 p-3.5 border border-slate-800">
+                            <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest block">KALORI</span>
+                            <p className="font-athletic text-3xl sm:text-4xl text-amber-400 mt-1">{estimatedCalories()}</p>
+                            <span className="text-[9px] font-black text-slate-500 block tracking-widest">KCAL</span>
                         </div>
                     </div>
 
                     {/* Sport Type Selector when idle */}
                     {status === 'idle' && (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-2.5">
                             {(['running', 'cycling', 'walking'] as const).map((type) => (
                                 <button
                                     key={type}
                                     type="button"
                                     onClick={() => setSportType(type)}
-                                    className={`py-2 px-3 rounded-xl border text-xs font-semibold capitalize transition-all ${
+                                    className={`py-3 px-3 rounded-2xl border text-xs font-athletic text-base tracking-wider transition-all ${
                                         sportType === type
-                                            ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
-                                            : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+                                            ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-500/10'
+                                            : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:bg-slate-850'
                                     }`}
                                 >
-                                    {type === 'running' ? '🏃 Lari' : type === 'cycling' ? '🚴 Sepeda' : '🚶 Jalan'}
+                                    {type === 'running' ? 'LARI OUTDOOR' : type === 'cycling' ? 'BERSEPEDA' : 'JALAN SANTAI'}
                                 </button>
                             ))}
                         </div>
@@ -485,7 +485,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                         {status === 'idle' && (
                             <button
                                 onClick={handleStart}
-                                className="w-full rounded-2xl bg-emerald-500 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
+                                className="w-full rounded-2xl bg-emerald-500 py-4 font-athletic text-xl tracking-wider text-slate-950 shadow-xl shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 transform active:scale-98"
                             >
                                 <Play className="h-5 w-5 fill-slate-950" />
                                 MULAI AKTIVITAS SEKARANG
@@ -496,17 +496,17 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                             <>
                                 <button
                                     onClick={handlePause}
-                                    className="flex-1 rounded-2xl bg-amber-500 py-3.5 text-sm font-bold text-slate-950 hover:bg-amber-400 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 rounded-2xl bg-amber-500 py-4 font-athletic text-lg tracking-wider text-slate-950 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-md"
                                 >
                                     <Pause className="h-5 w-5 fill-slate-950" />
-                                    Jeda (Pause)
+                                    JEDA (PAUSE)
                                 </button>
                                 <button
                                     onClick={handleFinish}
-                                    className="flex-1 rounded-2xl bg-rose-600 py-3.5 text-sm font-bold text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 rounded-2xl bg-rose-600 py-4 font-athletic text-lg tracking-wider text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2 shadow-md"
                                 >
                                     <Square className="h-5 w-5 fill-white" />
-                                    Selesai & Simpan
+                                    SELESAI & SIMPAN
                                 </button>
                             </>
                         )}
@@ -515,23 +515,23 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                             <>
                                 <button
                                     onClick={handleResume}
-                                    className="flex-1 rounded-2xl bg-emerald-500 py-3.5 text-sm font-bold text-slate-950 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 rounded-2xl bg-emerald-500 py-4 font-athletic text-lg tracking-wider text-slate-950 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-md"
                                 >
                                     <Play className="h-5 w-5 fill-slate-950" />
-                                    Lanjutkan (Resume)
+                                    LANJUTKAN
                                 </button>
                                 <button
                                     onClick={handleFinish}
-                                    className="flex-1 rounded-2xl bg-rose-600 py-3.5 text-sm font-bold text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 rounded-2xl bg-rose-600 py-4 font-athletic text-lg tracking-wider text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2 shadow-md"
                                 >
                                     <Square className="h-5 w-5 fill-white" />
-                                    Selesai & Simpan
+                                    SELESAI
                                 </button>
                             </>
                         )}
                     </div>
 
-                    <p className="text-[11px] text-slate-500 text-center">
+                    <p className="text-[11px] text-slate-500 text-center font-medium">
                         Screen Wake Lock otomatis aktif agar layar HP tetap menyala selama aktivitas berjalan.
                     </p>
                 </div>

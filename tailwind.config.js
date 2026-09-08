@@ -13,7 +13,21 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Manrope', '"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+                display: ['"Barlow Condensed"', 'sans-serif'],
+                athletic: ['"Barlow Condensed"', 'sans-serif'],
+            },
+            colors: {
+                nike: {
+                    volt: '#CCFF00',
+                    lime: '#00E599',
+                    dark: '#0A0E17',
+                    surface: '#111827',
+                },
+                strava: {
+                    orange: '#FC4C02',
+                    coral: '#FF5500',
+                },
             },
         },
     },

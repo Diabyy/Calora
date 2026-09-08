@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#182234"/>
+      <stop offset="100%" stop-color="#0b0f17"/>
+    </linearGradient>
+    <linearGradient id="limeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d9fa82"/>
+      <stop offset="100%" stop-color="#b6e84d"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Edge-to-edge background for maskable icons (Android will crop circle/squircle) -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+  
+  <!-- Scaled into 80% safe zone (center at 256, 256) -->
+  <g transform="translate(51, 51) scale(0.8)">
+    <circle cx="256" cy="256" r="186" fill="none" stroke="#ffffff" stroke-width="5" stroke-opacity="0.1" stroke-dasharray="16 12"/>
+    
+    <path d="M 346 142 
+             C 318 114, 276 100, 232 100 
+             C 142 100, 78 168, 78 256 
+             C 78 344, 142 412, 232 412 
+             C 280 412, 324 394, 354 362 
+             L 306 318 
+             C 286 338, 258 348, 232 348 
+             C 178 348, 140 306, 140 256 
+             C 140 206, 178 164, 232 164 
+             C 256 164, 280 174, 298 190 
+             Z" 
+          fill="url(#limeGrad)"/>
+          
+    <circle cx="364" cy="148" r="22" fill="#fc4c02"/>
+    <circle cx="364" cy="148" r="12" fill="#ff7a45"/>
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#182234"/>
+      <stop offset="100%" stop-color="#0b0f17"/>
+    </linearGradient>
+    <linearGradient id="limeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d9fa82"/>
+      <stop offset="100%" stop-color="#b6e84d"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  
+  <!-- App Icon Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <!-- Outer subtle track ring -->
+  <circle cx="256" cy="256" r="186" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.08" stroke-dasharray="16 12"/>
+  
+  <!-- Athletic "C" Glyph -->
+  <g filter="url(#glow)">
+    <path d="M 346 142 
+             C 318 114, 276 100, 232 100 
+             C 142 100, 78 168, 78 256 
+             C 78 344, 142 412, 232 412 
+             C 280 412, 324 394, 354 362 
+             L 306 318 
+             C 286 338, 258 348, 232 348 
+             C 178 348, 140 306, 140 256 
+             C 140 206, 178 164, 232 164 
+             C 256 164, 280 174, 298 190 
+             Z" 
+          fill="url(#limeGrad)"/>
+  </g>
+  
+  <!-- Signal Performance Orange Pulse Dot -->
+  <circle cx="364" cy="148" r="22" fill="#fc4c02"/>
+  <circle cx="364" cy="148" r="12" fill="#ff7a45"/>
+</svg>

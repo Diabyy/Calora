@@ -17,8 +17,13 @@ import {
     ChevronRight,
     Loader2,
     SlidersHorizontal,
-    Edit3
+    Edit3,
+    Sunrise,
+    Sun,
+    Moon,
+    Coffee
 } from 'lucide-react';
+import { visualAssets } from '@/data/visualAssets';
 
 interface FoodItem {
     id?: number;
@@ -89,12 +94,12 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
     const [selectedDbFood, setSelectedDbFood] = useState<any | null>(null);
     const [dbPortion, setDbPortion] = useState<number>(100);
 
-    // Meal names mapping
-    const mealTitles: Record<string, { label: string; icon: string; time: string }> = {
-        breakfast: { label: 'Sarapan', icon: '🍳', time: '06:00 - 10:00' },
-        lunch: { label: 'Makan Siang', icon: '🍲', time: '11:30 - 14:30' },
-        dinner: { label: 'Makan Malam', icon: '🍽️', time: '18:00 - 21:00' },
-        snack: { label: 'Camilan & Minuman', icon: '🍎', time: 'Sepanjang Hari' },
+    // Meal names mapping with professional Lucide icons
+    const mealTitles: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; time: string }> = {
+        breakfast: { label: 'Sarapan', icon: Sunrise, time: '06:00 - 10:00' },
+        lunch: { label: 'Makan Siang', icon: Sun, time: '11:30 - 14:30' },
+        dinner: { label: 'Makan Malam', icon: Moon, time: '18:00 - 21:00' },
+        snack: { label: 'Camilan & Minuman', icon: Coffee, time: 'Sepanjang Hari' },
     };
 
     const handleDateChange = (days: number) => {
@@ -352,29 +357,29 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                            Nutrition & AI Food Tracker
+                        <h2 className="font-athletic text-3xl sm:text-4xl tracking-tight text-slate-950">
+                            NUTRITION & AI FOOD SCANNER
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Pantau nutrisi harian dengan integrasi database masakan Indonesia dan AI Vision.
+                        <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
+                            Read the plate. Keep the signal.
                         </p>
                     </div>
 
                     {/* Date Navigation */}
-                    <div className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 p-1 shadow-sm">
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-sm">
                         <button
                             onClick={() => handleDateChange(-1)}
-                            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 transition-colors"
+                            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <div className="flex items-center gap-2 px-2 text-sm font-semibold text-gray-800">
+                        <div className="flex items-center gap-2 px-3 text-xs font-bold text-slate-800">
                             <Calendar className="h-4 w-4 text-emerald-600" />
-                            {date}
+                            <span className="font-display text-sm tracking-wide">{date}</span>
                         </div>
                         <button
                             onClick={() => handleDateChange(1)}
-                            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 transition-colors"
+                            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -386,72 +391,83 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+                    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                        <img src={visualAssets.food} alt="Mangkuk makanan segar berwarna-warni" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-55" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/90 to-transparent" />
+                        <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+                            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]"><Camera className="h-3.5 w-3.5" /> Food signal / TKPI</span>
+                            <h2 className="mt-4 font-athletic text-5xl uppercase leading-[0.88] sm:text-6xl">Your plate is part of the training.</h2>
+                            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">Scan makanan Indonesia, cek porsinya, dan lihat bagaimana pilihan hari ini mengisi budget energi kamu.</p>
+                            <button type="button" onClick={() => { setSelectedMeal('breakfast'); setShowAiModal(true); }} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#c8f169] px-5 py-3 text-xs font-black uppercase tracking-wider text-[#111827] transition hover:bg-white"><Camera className="h-3.5 w-3.5" /> Scan a plate</button>
+                        </div>
+                    </section>
+
                     {/* Top Macro Summary Cards */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {/* Calories */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Kalori Harian</span>
-                                <Flame className="h-4 w-4 text-amber-500" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kalori Harian</span>
+                                <Flame className="h-4 w-4 text-emerald-500" />
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-gray-900">{consumed.calories}</span>
-                                <span className="text-xs text-gray-500">/ {target.calories} kcal</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-athletic text-4xl sm:text-5xl text-slate-950">{consumed.calories}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">/ {target.calories} KCAL</span>
                             </div>
-                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${calPercent}%` }} />
+                            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${calPercent}%` }} />
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">
-                                Sisa <strong className="text-gray-900">{Math.max(0, target.calories - consumed.calories)} kcal</strong>
+                            <p className="mt-2 text-xs text-slate-500 font-medium">
+                                Sisa <strong className="font-display text-sm font-black text-emerald-700">{Math.max(0, target.calories - consumed.calories)}</strong> KCAL
                             </p>
                         </div>
 
                         {/* Protein */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Protein</span>
-                                <span className="text-xs font-bold text-emerald-600">{proPercent}%</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Protein</span>
+                                <span className="font-display font-black text-xs text-violet-700">{proPercent}%</span>
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-emerald-600">{consumed.protein}g</span>
-                                <span className="text-xs text-gray-500">/ {target.protein}g</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-athletic text-4xl sm:text-5xl text-violet-700">{consumed.protein}g</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">/ {target.protein}g</span>
                             </div>
-                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${proPercent}%` }} />
+                            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div className="h-full rounded-full bg-violet-500 transition-all duration-500" style={{ width: `${proPercent}%` }} />
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">Kebutuhan pemulihan otot & kenyang</p>
+                            <p className="mt-2 text-xs text-slate-400 font-medium">Pemulihan otot & rasa kenyang</p>
                         </div>
 
                         {/* Carbs */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Karbohidrat</span>
-                                <span className="text-xs font-bold text-sky-600">{carbPercent}%</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Karbohidrat</span>
+                                <span className="font-display font-black text-xs text-amber-700">{carbPercent}%</span>
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-sky-600">{consumed.carbs}g</span>
-                                <span className="text-xs text-gray-500">/ {target.carbs}g</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-athletic text-4xl sm:text-5xl text-amber-700">{consumed.carbs}g</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">/ {target.carbs}g</span>
                             </div>
-                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${carbPercent}%` }} />
+                            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${carbPercent}%` }} />
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">Bahan bakar energi aktivitas & lari</p>
+                            <p className="mt-2 text-xs text-slate-400 font-medium">Bahan bakar aktivitas & olahraga</p>
                         </div>
 
                         {/* Fat */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Lemak</span>
-                                <span className="text-xs font-bold text-rose-600">{fatPercent}%</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lemak Sehat</span>
+                                <span className="font-display font-black text-xs text-rose-700">{fatPercent}%</span>
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-rose-600">{consumed.fat}g</span>
-                                <span className="text-xs text-gray-500">/ {target.fat}g</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-athletic text-4xl sm:text-5xl text-rose-700">{consumed.fat}g</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">/ {target.fat}g</span>
                             </div>
-                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                <div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: `${fatPercent}%` }} />
+                            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div className="h-full rounded-full bg-rose-500 transition-all duration-500" style={{ width: `${fatPercent}%` }} />
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">Kesehatan hormon & sel tubuh</p>
+                            <p className="mt-2 text-xs text-slate-400 font-medium">Keseimbangan hormon & sel tubuh</p>
                         </div>
                     </div>
 
@@ -462,20 +478,25 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                             const currentLog = logs.find((l) => l.meal_type === mealKey);
 
                             return (
-                                <div key={mealKey} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                                <div key={mealKey} className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-2xl">{meta.icon}</span>
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-100/80 text-emerald-600 shadow-sm">
+                                                <meta.icon className="h-5 w-5" />
+                                            </div>
                                             <div>
-                                                <h3 className="font-bold text-gray-900 text-lg">{meta.label}</h3>
-                                                <p className="text-xs text-gray-400">{meta.time}</p>
+                                                <h3 className="font-display font-black text-xl tracking-wide text-slate-900 uppercase">
+                                                    {meta.label}
+                                                </h3>
+                                                <p className="text-xs text-slate-400 font-medium">{meta.time}</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             {currentLog && currentLog.total_calories > 0 && (
-                                                <span className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 px-3 py-1 rounded-xl">
-                                                    🔥 {currentLog.total_calories} kcal
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-slate-100 border border-slate-200/80 px-3 py-1.5 rounded-xl">
+                                                    <Flame className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                                                    <span className="font-display font-black text-sm">{currentLog.total_calories}</span> KCAL
                                                 </span>
                                             )}
                                             <button
@@ -483,29 +504,29 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                                                     setSelectedMeal(mealKey);
                                                     setShowAiModal(true);
                                                 }}
-                                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition-all"
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-all"
                                             >
                                                 <Camera className="h-3.5 w-3.5" />
-                                                Scan AI 📷
+                                                Scan AI
                                             </button>
                                             <button
                                                 onClick={() => {
                                                     setSelectedMeal(mealKey);
                                                     setShowBarcodeModal(true);
                                                 }}
-                                                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all"
+                                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
                                             >
-                                                <Barcode className="h-3.5 w-3.5 text-gray-500" />
-                                                Barcode 🏷️
+                                                <Barcode className="h-3.5 w-3.5 text-slate-500" />
+                                                Barcode
                                             </button>
                                             <button
                                                 onClick={() => {
                                                     setSelectedMeal(mealKey);
                                                     setShowSearchModal(true);
                                                 }}
-                                                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all"
+                                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
                                             >
-                                                <Search className="h-3.5 w-3.5 text-gray-400" />
+                                                <Search className="h-3.5 w-3.5 text-slate-400" />
                                                 Cari Makanan
                                             </button>
                                         </div>
@@ -513,27 +534,34 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
                                     {/* Items Table */}
                                     {currentLog && currentLog.items.length > 0 ? (
-                                        <div className="mt-4 divide-y divide-gray-100">
+                                        <div className="mt-4 divide-y divide-slate-100">
                                             {currentLog.items.map((item) => (
                                                 <div key={item.id} className="py-3 flex items-center justify-between">
                                                     <div>
                                                         <div className="flex items-center gap-2">
-                                                            <p className="font-medium text-sm text-gray-900">{item.name}</p>
+                                                            <p className="font-bold text-sm text-slate-900">{item.name}</p>
                                                             {item.source === 'ai_scanner' && (
-                                                                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                                                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                                                                     AI Vision
                                                                 </span>
                                                             )}
+                                                            {item.source === 'database' && (
+                                                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">
+                                                                    TKPI
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                        <p className="text-xs text-gray-400">
+                                                        <p className="text-xs text-slate-400 font-medium mt-0.5">
                                                             {item.portion_g}g · P: {item.protein}g · K: {item.carbs}g · L: {item.fat}g
                                                         </p>
                                                     </div>
                                                     <div className="flex items-center gap-4">
-                                                        <span className="text-sm font-semibold text-gray-700">{item.calories} kcal</span>
+                                                        <span className="font-display font-bold text-base text-slate-800">
+                                                            {item.calories} <span className="text-xs text-slate-400 font-normal">kcal</span>
+                                                        </span>
                                                         <button
                                                             onClick={() => item.id && handleDeleteItem(item.id)}
-                                                            className="text-gray-400 hover:text-rose-600 transition-colors p-1"
+                                                            className="text-slate-300 hover:text-rose-600 transition-colors p-1"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
@@ -542,7 +570,7 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="mt-4 rounded-xl border border-dashed border-gray-200 py-6 text-center text-xs text-gray-400">
+                                        <div className="mt-4 rounded-2xl border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400 font-medium">
                                             Belum ada makanan yang dicatat untuk {meta.label.toLowerCase()}.
                                         </div>
                                     )}
@@ -555,54 +583,57 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
             {/* AI SCANNER MODAL */}
             {showAiModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between border-b pb-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto border border-slate-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <h3 className="font-display font-black text-xl tracking-wide uppercase text-slate-900 flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-emerald-600" />
-                                    AI Food Scanner 📷
+                                    AI Food Scanner
                                 </h3>
-                                <p className="text-xs text-gray-500">
-                                    Foto makananmu untuk estimasi porsi, kalori, dan nutrisi khas Indonesia secara instan.
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    Estimasi porsi visual & kalkulasi nutrisi server-side berdasarkan database TKPI.
                                 </p>
                             </div>
-                            <button onClick={() => setShowAiModal(false)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+                            <button onClick={() => setShowAiModal(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {/* Upload / Camera Dropzone */}
                         {!photoPreview ? (
-                            <label className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 py-10 px-4 cursor-pointer hover:bg-emerald-50 transition-all">
-                                <Camera className="h-10 w-10 text-emerald-600 mb-3" />
-                                <span className="font-semibold text-sm text-emerald-900">Ambil Foto / Pilih Gambar Makanan</span>
-                                <span className="text-xs text-emerald-700/70 mt-1">Mendukung format JPG, PNG, WEBP</span>
+                            <label className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 py-12 px-4 cursor-pointer hover:bg-emerald-50 transition-all group">
+                                <div className="h-14 w-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 mb-3 group-hover:scale-110 transition-transform">
+                                    <Camera className="h-7 w-7" />
+                                </div>
+                                <span className="font-bold text-sm text-emerald-950">Ambil Foto / Upload Gambar Piring</span>
+                                <span className="text-xs text-emerald-700/70 mt-1 font-medium">Format didukung: JPG, PNG, WEBP (Maks 10MB)</span>
                                 <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                             </label>
                         ) : (
                             <div className="space-y-4">
-                                <div className="relative rounded-2xl overflow-hidden max-h-48 w-full bg-gray-900 flex items-center justify-center">
-                                    <img src={photoPreview} alt="Food preview" className="object-cover h-full w-full opacity-80" />
+                                <div className="relative rounded-2xl overflow-hidden max-h-56 w-full bg-slate-900 flex items-center justify-center border border-slate-800">
+                                    <img src={photoPreview} alt="Food preview" className="object-cover h-full w-full opacity-85" />
                                     {scanning && (
-                                        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
-                                            <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mb-2" />
-                                            <p className="text-sm font-semibold">Calora AI sedang menganalisis piringmu...</p>
+                                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex flex-col items-center justify-center text-white p-4">
+                                            <Loader2 className="h-9 w-9 animate-spin text-emerald-400 mb-2" />
+                                            <p className="font-display font-black text-lg tracking-wide uppercase">Calora AI Vision</p>
+                                            <p className="text-xs text-slate-300 text-center font-medium mt-1">Mengidentifikasi makanan & menghitung nutrisi database...</p>
                                         </div>
                                     )}
                                 </div>
 
                                 {aiError && (
                                     <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 space-y-2">
-                                        <p className="font-semibold">{aiError}</p>
-                                        <div className="flex gap-2">
+                                        <p className="font-bold">{aiError}</p>
+                                        <div className="flex gap-2 pt-1">
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setPhotoPreview(null);
                                                     setAiError(null);
                                                 }}
-                                                className="rounded-lg bg-rose-600 px-3 py-1.5 text-white hover:bg-rose-500 font-medium"
+                                                className="rounded-xl bg-rose-600 px-3.5 py-1.5 text-white hover:bg-rose-500 font-bold"
                                             >
                                                 Pilih Foto Lain
                                             </button>
@@ -612,38 +643,40 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
                                 {!scanning && aiItems.length > 0 && (
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                                             <div>
-                                                <h4 className="font-bold text-gray-900 text-sm">Hasil Deteksi: {aiDishName}</h4>
-                                                <p className="text-xs text-gray-500">
-                                                    Kamu bisa menggeser porsi atau menghapus bahan sebelum disimpan.
+                                                <h4 className="font-display font-black text-base text-slate-900 uppercase">
+                                                    Hasil Deteksi: {aiDishName}
+                                                </h4>
+                                                <p className="text-xs text-slate-400 font-medium">
+                                                    Geser porsi (gram) atau hapus bahan sebelum disimpan.
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Correction Cards */}
-                                        <div className="space-y-3">
+                                        <div className="space-y-2.5">
                                             {aiItems.map((item, idx) => (
-                                                <div key={idx} className="rounded-xl border border-gray-200 bg-gray-50/50 p-3.5 space-y-2">
+                                                <div key={idx} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-semibold text-sm text-gray-800">{item.name}</span>
+                                                        <span className="font-bold text-sm text-slate-900">{item.name}</span>
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-xs font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">
-                                                                {item.calories} kcal
+                                                            <span className="font-display font-bold text-xs text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                                                                {item.calories} KCAL
                                                             </span>
                                                             <button
                                                                 onClick={() => handleRemoveAiItem(idx)}
-                                                                className="text-gray-400 hover:text-rose-500"
+                                                                className="text-slate-300 hover:text-rose-600 transition-colors"
                                                             >
-                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                                <Trash2 className="h-4 w-4" />
                                                             </button>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 pt-1">
                                                         <div className="flex items-center gap-2 flex-1">
-                                                            <SlidersHorizontal className="h-3 w-3 text-gray-400" />
-                                                            <span>Porsi:</span>
+                                                            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                                                            <span className="text-xs font-semibold text-slate-600">Porsi:</span>
                                                             <input
                                                                 type="range"
                                                                 min="10"
@@ -653,9 +686,9 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                                                                 onChange={(e) => handleAdjustAiItemPortion(idx, Number(e.target.value))}
                                                                 className="w-full accent-emerald-600"
                                                             />
-                                                            <span className="font-bold text-gray-800 w-12">{item.portion_g}g</span>
+                                                            <span className="font-display font-black text-sm text-slate-800 w-12 text-right">{item.portion_g}g</span>
                                                         </div>
-                                                        <span className="text-[11px]">
+                                                        <span className="text-[11px] font-semibold text-slate-400">
                                                             P:{item.protein}g · K:{item.carbs}g · L:{item.fat}g
                                                         </span>
                                                     </div>
@@ -666,7 +699,7 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                                         {/* Save Action */}
                                         <button
                                             onClick={handleSaveAiItems}
-                                            className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"
+                                            className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"
                                         >
                                             <Check className="h-4 w-4" />
                                             Simpan ke {mealTitles[selectedMeal].label}
@@ -681,55 +714,57 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
             {/* SEARCH DATABASE MODAL */}
             {showSearchModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl space-y-6 max-h-[85vh] flex flex-col">
-                        <div className="flex items-center justify-between border-b pb-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6 max-h-[85vh] flex flex-col border border-slate-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <h3 className="font-display font-black text-xl tracking-wide uppercase text-slate-900 flex items-center gap-2">
                                     <Utensils className="h-5 w-5 text-emerald-600" />
-                                    Cari Makanan Indonesia (TKPI)
+                                    Cari Makanan Nusantara (TKPI)
                                 </h3>
-                                <p className="text-xs text-gray-500">
-                                    Database resmi nutrisi masakan nusantara dari Kemenkes RI.
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    Database resmi komposisi pangan Kementerian Kesehatan RI.
                                 </p>
                             </div>
-                            <button onClick={() => setShowSearchModal(false)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+                            <button onClick={() => setShowSearchModal(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {/* Search Input */}
                         <div className="relative">
-                            <Search className="absolute left-3.5 top-3 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Ketik nama makanan (cth: Nasi, Ayam, Rendang, Soto)..."
-                                className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                                className="w-full rounded-2xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm font-medium focus:border-emerald-500 focus:ring-emerald-500"
                                 autoFocus
                             />
                         </div>
 
                         {/* Results List */}
                         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                            {searching && <p className="text-center text-xs text-gray-400 py-6">Mencari database makanan...</p>}
+                            {searching && <p className="text-center text-xs text-slate-400 py-6 font-medium">Mencari database makanan...</p>}
                             {!searching && searchResults.map((food) => (
                                 <div
                                     key={food.id}
                                     onClick={() => setSelectedDbFood(food)}
-                                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                                         selectedDbFood?.id === food.id
-                                            ? 'border-emerald-600 bg-emerald-50/60 ring-1 ring-emerald-600'
-                                            : 'border-gray-100 hover:border-gray-200'
+                                            ? 'border-emerald-600 bg-emerald-50/70 ring-1 ring-emerald-600'
+                                            : 'border-slate-100 hover:border-slate-300 bg-slate-50/50'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <p className="font-semibold text-sm text-gray-900">{food.name}</p>
-                                        <span className="text-xs font-bold text-gray-700">{food.calories} kcal / 100g</span>
+                                        <p className="font-bold text-sm text-slate-900">{food.name}</p>
+                                        <span className="font-display font-bold text-xs text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+                                            {food.calories} KCAL / 100g
+                                        </span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-0.5">
-                                        {food.category} · P:{food.protein}g · K:{food.carbs}g · L:{food.fat}g
+                                    <p className="text-xs text-slate-400 mt-1 font-medium">
+                                        {food.category} · P: {food.protein}g · K: {food.carbs}g · L: {food.fat}g
                                     </p>
                                 </div>
                             ))}
@@ -737,24 +772,24 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
                         {/* Portion adjustment & Submit */}
                         {selectedDbFood && (
-                            <div className="border-t pt-4 space-y-4">
+                            <div className="border-t border-slate-100 pt-4 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700">Ukuran Porsi:</span>
+                                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Takaran Porsi:</span>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
                                             value={dbPortion}
                                             onChange={(e) => setDbPortion(Number(e.target.value))}
-                                            className="w-24 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-right focus:border-emerald-500"
+                                            className="w-24 rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-bold text-right focus:border-emerald-500"
                                             min="5"
                                         />
-                                        <span className="text-xs text-gray-500">gram</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">gram</span>
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={handleSaveDbFood}
-                                    className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-500 transition-all"
+                                    className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-500 transition-all"
                                 >
                                     Tambahkan ke {mealTitles[selectedMeal].label}
                                 </button>
@@ -766,19 +801,19 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
 
             {/* BARCODE SCANNER MODAL (Open Food Facts) */}
             {showBarcodeModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-6">
-                        <div className="flex items-center justify-between border-b pb-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6 border border-slate-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <h3 className="font-display font-black text-xl tracking-wide uppercase text-slate-900 flex items-center gap-2">
                                     <Barcode className="h-5 w-5 text-emerald-600" />
-                                    Scan Barcode Kemasan 🏷️
+                                    Scan Barcode Produk Kemasan
                                 </h3>
-                                <p className="text-xs text-gray-500">
-                                    Didukung database publik Open Food Facts untuk snack & minuman kemasan.
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    Didukung Open Food Facts untuk membaca data nutrisi kemasan.
                                 </p>
                             </div>
-                            <button onClick={() => setShowBarcodeModal(false)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+                            <button onClick={() => setShowBarcodeModal(false)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
@@ -791,20 +826,20 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                             }}
                             className="space-y-3"
                         >
-                            <label className="block text-xs font-semibold text-gray-700">Ketik / Paste Nomor Barcode Produk</label>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Ketik / Scan Nomor Barcode</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={barcodeInput}
                                     onChange={(e) => setBarcodeInput(e.target.value)}
-                                    placeholder="Contoh: 8998866200388 (Indomie Goreng)"
-                                    className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                                    placeholder="Contoh: 8998866200388"
+                                    className="flex-1 rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm font-medium focus:border-emerald-500 focus:ring-emerald-500"
                                     autoFocus
                                 />
                                 <button
                                     type="submit"
                                     disabled={barcodeLoading || !barcodeInput.trim()}
-                                    className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition-all flex items-center gap-1.5 shadow"
+                                    className="rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition-all flex items-center gap-1.5 shadow-sm"
                                 >
                                     {barcodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                                     Cari
@@ -812,15 +847,15 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                             </div>
 
                             {/* Quick sample chips */}
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 pt-1">
-                                <span>Coba contoh:</span>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 pt-1 font-medium">
+                                <span>Contoh cepat:</span>
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setBarcodeInput('8998866200388');
                                         handleSearchBarcode('8998866200388');
                                     }}
-                                    className="rounded-lg bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-0.5 transition-colors"
+                                    className="rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-0.5 transition-colors font-semibold text-slate-600"
                                 >
                                     Indomie Goreng
                                 </button>
@@ -830,13 +865,13 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
                                         setBarcodeInput('8992775211116');
                                         handleSearchBarcode('8992775211116');
                                     }}
-                                    className="rounded-lg bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-0.5 transition-colors"
+                                    className="rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-0.5 transition-colors font-semibold text-slate-600"
                                 >
                                     Ultra Milk Cokelat
                                 </button>
                             </div>
                             {barcodeError && (
-                                <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 border border-rose-200">
                                     {barcodeError}
                                 </p>
                             )}

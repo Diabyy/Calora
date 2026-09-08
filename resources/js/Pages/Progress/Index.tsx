@@ -14,7 +14,8 @@ import {
     Target,
     Activity as ActivityIcon,
     Sparkles,
-    Trophy
+    Trophy,
+    CheckCircle
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -31,6 +32,7 @@ import {
     AreaChart,
     Area
 } from 'recharts';
+import { visualAssets } from '@/data/visualAssets';
 
 interface WeightHistoryPoint {
     date: string;
@@ -120,18 +122,18 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                            Progress Tracking & Analytics 📊
+                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900">
+                            PROGRESS & PERFORMANCE
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Pantau tren penurunan/kenaikan berat badan, konsistensi kalori, dan pencapaian milestone.
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
+                            Read the trend, not just the number
                         </p>
                     </div>
 
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setShowWeightModal(true)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-all"
+                            className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-all"
                         >
                             <Scale className="h-4 w-4" />
                             Catat Timbangan
@@ -144,19 +146,29 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+                    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                        <img src={visualAssets.runner} alt="Atlet berlari untuk mengukur progres" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-40" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-transparent" />
+                        <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]">Performance review / weekly</span>
+                            <h2 className="mt-4 font-athletic text-5xl uppercase leading-[0.88] sm:text-6xl">Progress is a pattern.</h2>
+                            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">Gunakan data mingguan untuk melihat arah, bukan untuk menghakimi satu hari yang tidak sempurna.</p>
+                        </div>
+                    </section>
+
                     {/* Top Overview Cards */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {/* Weight Metric */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Berat Saat Ini</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Berat Saat Ini</span>
                                 <Scale className="h-4 w-4 text-emerald-600" />
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-gray-900">{analytics.weight.current}</span>
-                                <span className="text-sm font-medium text-gray-500">kg</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-slate-900">{analytics.weight.current}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">KG</span>
                             </div>
-                            <div className="mt-2 flex items-center gap-1.5 text-xs">
+                            <div className="mt-2 flex items-center gap-1.5 text-xs font-medium">
                                 {analytics.weight.change < 0 ? (
                                     <span className="inline-flex items-center font-bold text-emerald-600">
                                         <TrendingDown className="h-3.5 w-3.5 mr-0.5" />
@@ -168,57 +180,57 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
                                         +{analytics.weight.change} kg
                                     </span>
                                 ) : (
-                                    <span className="text-gray-400">Stabil (0 kg)</span>
+                                    <span className="text-slate-400">Stabil (0 kg)</span>
                                 )}
-                                <span className="text-gray-400">sejak awal profil</span>
+                                <span className="text-slate-400">sejak awal profil</span>
                             </div>
                         </div>
 
                         {/* Comparative Analysis Insight */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Performa Minggu Ini</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Performa Minggu Ini</span>
                                 <ActivityIcon className="h-4 w-4 text-sky-600" />
                             </div>
-                            <div className="mt-3 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-gray-900">
+                            <div className="mt-2 flex items-baseline gap-1">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-slate-900">
                                     {analytics.comparative_analysis.distance_change_percent > 0 ? '+' : ''}
                                     {analytics.comparative_analysis.distance_change_percent}%
                                 </span>
                             </div>
-                            <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                            <p className="mt-1 text-xs text-slate-400 font-medium line-clamp-2">
                                 {analytics.comparative_analysis.insight}
                             </p>
                         </div>
 
                         {/* Macro Compliance */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Rata-rata Protein</span>
-                                <Flame className="h-4 w-4 text-amber-500" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rata-rata Protein</span>
+                                <Flame className="h-4 w-4 text-violet-500 fill-violet-500" />
                             </div>
-                            <div className="mt-3 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-emerald-600">{analytics.macro_averages.protein}</span>
-                                <span className="text-sm font-medium text-gray-500">g / hari</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-violet-700">{analytics.macro_averages.protein}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">G / HARI</span>
                             </div>
-                            <p className="mt-1 text-xs text-gray-400">
-                                K:{analytics.macro_averages.carbs}g · L:{analytics.macro_averages.fat}g
+                            <p className="mt-1 text-xs text-slate-400 font-medium">
+                                K: {analytics.macro_averages.carbs}g · L: {analytics.macro_averages.fat}g
                             </p>
                         </div>
 
                         {/* Badges / Gamification */}
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Milestone & Badge</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pencapaian & Lencana</span>
                                 <Trophy className="h-4 w-4 text-amber-500" />
                             </div>
-                            <div className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-extrabold text-gray-900">{unlockedCount}</span>
-                                <span className="text-sm font-medium text-gray-500">/ {achievements.length} Terbuka</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-slate-900">{unlockedCount}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">/ {achievements.length} TERBUKA</span>
                             </div>
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700 font-bold">
                                 <Sparkles className="h-3 w-3" />
-                                {totalPoints} Calora XP
+                                {totalPoints} XP Akumulasi
                             </div>
                         </div>
                     </div>
@@ -348,8 +360,8 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
                                                 {ach.description}
                                             </p>
                                             {ach.is_unlocked && (
-                                                <span className="text-[10px] text-emerald-700 font-semibold block mt-2">
-                                                    ✓ Terbuka: {ach.unlocked_at}
+                                                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold mt-2">
+                                                    <CheckCircle className="h-3 w-3 text-emerald-600" /> Terbuka: {ach.unlocked_at}
                                                 </span>
                                             )}
                                         </div>

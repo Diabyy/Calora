@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { Activity, Flame, Heart, Target, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
+import { visualAssets } from '@/data/visualAssets';
 
 interface ProfileData {
     age?: number;
@@ -74,24 +75,31 @@ export default function Onboarding({ profile }: Props) {
             header={
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                            Profil Tubuh & Target Energi
+                        <h2 className="font-athletic text-3xl sm:text-4xl tracking-tight text-slate-950">
+                            BODY PROFILE & ENERGY TARGETS
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Sesuaikan data biometrik agar rekomendasi nutrisi Calora presisi.
+                        <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
+                            Mifflin-St Jeor Formula · Customized Biometrics Engine
                         </p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Smart Mifflin-St Jeor
-                    </span>
                 </div>
             }
         >
             <Head title="Profil & Target Nutrisi - Calora" />
 
             <div className="py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+                    {/* Visual Banner */}
+                    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                        <img src={visualAssets.runner} alt="Atlet mengkalibrasi profil fisik" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-40" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-transparent" />
+                        <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]">Calibration / Biometrics</span>
+                            <h2 className="mt-4 font-athletic text-5xl uppercase leading-[0.88] sm:text-6xl">Ground your training in facts.</h2>
+                            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">Setiap rekomendasi kalori dan makronutrisi harian dihitung dari profil fisik dan intensitas kegiatanmu.</p>
+                        </div>
+                    </section>
+
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         {/* Form Inputs */}
                         <div className="lg:col-span-2">
@@ -111,24 +119,24 @@ export default function Onboarding({ profile }: Props) {
                                             <button
                                                 type="button"
                                                 onClick={() => setData('gender', 'male')}
-                                                className={`flex items-center justify-center rounded-xl border py-2.5 px-3 text-sm font-medium transition-all ${
+                                                className={`flex items-center justify-center rounded-xl border py-2.5 px-3 text-sm font-semibold transition-all ${
                                                     data.gender === 'male'
                                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
-                                                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                                                 }`}
                                             >
-                                                Pria 👨
+                                                Pria
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setData('gender', 'female')}
-                                                className={`flex items-center justify-center rounded-xl border py-2.5 px-3 text-sm font-medium transition-all ${
+                                                className={`flex items-center justify-center rounded-xl border py-2.5 px-3 text-sm font-semibold transition-all ${
                                                     data.gender === 'female'
                                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
-                                                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                                                 }`}
                                             >
-                                                Wanita 👩
+                                                Wanita
                                             </button>
                                         </div>
                                         {errors.gender && <p className="mt-1 text-xs text-red-600">{errors.gender}</p>}
@@ -248,7 +256,7 @@ export default function Onboarding({ profile }: Props) {
                                     <button
                                         type="submit"
                                         disabled={processing}
-                                        className="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-all disabled:opacity-50"
+                                        className="w-full rounded-2xl bg-slate-950 px-5 py-3.5 font-display font-black text-xs uppercase tracking-wider text-white shadow-sm hover:bg-[#fc4c02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950 transition-all disabled:opacity-50"
                                     >
                                         {processing ? 'Menyimpan...' : 'Simpan & Aktifkan Calora Engine'}
                                     </button>
@@ -258,31 +266,31 @@ export default function Onboarding({ profile }: Props) {
 
                         {/* Summary & Live Calculation Preview Card */}
                         <div className="space-y-6">
-                            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 text-white shadow-lg">
-                                <div className="flex items-center gap-2 text-emerald-100 text-xs font-semibold uppercase tracking-wider">
-                                    <Target className="h-4 w-4" />
-                                    Target Harian Calora
+                            <div className="rounded-[1.75rem] border border-slate-200 bg-[#111827] p-6 text-white shadow-xl shadow-slate-900/10">
+                                <div className="flex items-center gap-2 text-[#c8f169] text-[10px] font-black uppercase tracking-[0.2em]">
+                                    <Target className="h-3.5 w-3.5" />
+                                    Baseline Energy Target
                                 </div>
                                 <div className="mt-4 flex items-baseline gap-2">
-                                    <span className="text-4xl font-extrabold tracking-tight">{preview.target}</span>
-                                    <span className="text-emerald-100 font-medium">kcal / hari</span>
+                                    <span className="font-metric text-5xl font-black text-white">{preview.target}</span>
+                                    <span className="font-sans text-xs font-bold text-slate-400 uppercase tracking-wider">KCAL / HARI</span>
                                 </div>
-                                <p className="mt-2 text-xs text-emerald-100/90 leading-relaxed">
+                                <p className="mt-2 text-xs text-slate-300 leading-relaxed font-medium">
                                     Berdasarkan BMR {preview.bmr} kcal dan estimasi pengeluaran energi harian (TDEE) {preview.tdee} kcal.
                                 </p>
 
-                                <div className="mt-6 pt-5 border-t border-emerald-400/40 grid grid-cols-3 gap-2 text-center">
+                                <div className="mt-6 pt-5 border-t border-white/15 grid grid-cols-3 gap-2 text-center">
                                     <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm">
-                                        <p className="text-[11px] font-medium text-emerald-100">Protein</p>
-                                        <p className="text-lg font-bold">{preview.proteinGrams}g</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Protein</p>
+                                        <p className="font-metric text-2xl font-bold text-violet-400 mt-0.5">{preview.proteinGrams}g</p>
                                     </div>
                                     <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm">
-                                        <p className="text-[11px] font-medium text-emerald-100">Karbo</p>
-                                        <p className="text-lg font-bold">{preview.carbsGrams}g</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Karbo</p>
+                                        <p className="font-metric text-2xl font-bold text-amber-400 mt-0.5">{preview.carbsGrams}g</p>
                                     </div>
                                     <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm">
-                                        <p className="text-[11px] font-medium text-emerald-100">Lemak</p>
-                                        <p className="text-lg font-bold">{preview.fatGrams}g</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lemak</p>
+                                        <p className="font-metric text-2xl font-bold text-rose-400 mt-0.5">{preview.fatGrams}g</p>
                                     </div>
                                 </div>
                             </div>

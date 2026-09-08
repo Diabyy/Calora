@@ -30,50 +30,71 @@ export default function Login({
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Masuk - Calora" />
+
+            <div className="mb-6 text-center space-y-1">
+                <h1 className="font-athletic text-4xl tracking-wide text-slate-950">
+                    Masuk ke Calora
+                </h1>
+                <p className="text-xs text-slate-500 font-medium">
+                    Lanjutkan pelacakan latihan dan nutrisi harianmu.
+                </p>
+            </div>
 
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <div className="mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-xs font-bold text-emerald-400 text-center">
                     {status}
                 </div>
             )}
 
-            <form onSubmit={submit}>
+            <form onSubmit={submit} className="space-y-4">
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Alamat Email" />
 
                     <TextInput
                         id="email"
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full"
+                        className="mt-1.5 block w-full"
                         autoComplete="username"
                         isFocused={true}
+                        placeholder="nama@email.com"
                         onChange={(e) => setData('email', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.email} className="mt-1.5 text-xs text-rose-400 font-medium" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                <div>
+                    <div className="flex items-center justify-between">
+                        <InputLabel htmlFor="password" value="Kata Sandi" />
+                        {canResetPassword && (
+                            <Link
+                                href={route('password.request')}
+                                className="text-xs font-semibold text-slate-400 hover:text-slate-950 transition-colors"
+                            >
+                                Lupa sandi?
+                            </Link>
+                        )}
+                    </div>
 
                     <TextInput
                         id="password"
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full"
+                        className="mt-1.5 block w-full"
                         autoComplete="current-password"
+                        placeholder="••••••••"
                         onChange={(e) => setData('password', e.target.value)}
                     />
 
-                    <InputError message={errors.password} className="mt-2" />
+                    <InputError message={errors.password} className="mt-1.5 text-xs text-rose-400 font-medium" />
                 </div>
 
-                <div className="mt-4 block">
-                    <label className="flex items-center">
+                <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center cursor-pointer select-none">
                         <Checkbox
                             name="remember"
                             checked={data.remember}
@@ -84,25 +105,26 @@ export default function Login({
                                 )
                             }
                         />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+                        <span className="ms-2 text-xs font-medium text-slate-500">
+                            Ingat saya di perangkat ini
                         </span>
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
-                    )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
+                <div className="pt-2">
+                    <PrimaryButton className="w-full py-3.5 text-sm font-display font-black tracking-wider" disabled={processing}>
+                        {processing ? 'Memproses...' : 'Masuk Sekarang'}
                     </PrimaryButton>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 text-center text-xs text-slate-500">
+                    Belum punya akun Calora?{' '}
+                    <Link
+                        href={route('register')}
+                        className="font-bold text-[#fc4c02] hover:text-slate-950 hover:underline transition-colors"
+                    >
+                        Daftar Gratis
+                    </Link>
                 </div>
             </form>
         </GuestLayout>

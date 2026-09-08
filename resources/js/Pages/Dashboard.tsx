@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { 
-    Flame, 
-    Zap, 
-    Utensils, 
-    Sparkles, 
-    ChevronRight, 
-    Camera, 
-    Activity as ActivityIcon, 
-    ArrowUpRight,
-    TrendingUp,
+import {
+    Activity,
+    ArrowRight,
+    Camera,
     CheckCircle2,
-    Clock,
-    Award,
+    ChevronRight,
+    CircleGauge,
+    Flame,
     HeartPulse,
-    X
+    Play,
+    Sparkles,
+    Target,
+    Utensils,
+    X,
 } from 'lucide-react';
+import { useState } from 'react';
+import { visualAssets } from '@/data/visualAssets';
 
 interface Props {
     profile: {
@@ -58,10 +58,7 @@ interface Props {
         activity_score: number;
         top_opportunity: string;
     };
-    insight: {
-        badge: string;
-        message: string;
-    };
+    insight: { badge: string; message: string };
     recommendations: {
         context_summary: string;
         recommendations: Array<{
@@ -78,6 +75,23 @@ interface Props {
     today_logs: any[];
 }
 
+const goalLabels: Record<string, string> = {
+    lose_weight: 'Fat loss',
+    maintain_weight: 'Maintain',
+    gain_muscle: 'Build muscle',
+    improve_fitness: 'Build fitness',
+};
+
+function Metric({ label, value, unit, tone = 'text-slate-950' }: { label: string; value: string | number; unit: string; tone?: string }) {
+    return (
+        <div>
+            <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</span>
+            <span className={`mt-1 block font-metric text-4xl leading-none ${tone}`}>{value}</span>
+            <span className="mt-1 block text-[9px] font-bold uppercase tracking-widest text-slate-400">{unit}</span>
+        </div>
+    );
+}
+
 export default function Dashboard({
     profile,
     streak = 0,
@@ -90,14 +104,6 @@ export default function Dashboard({
     today_logs,
 }: Props) {
     const [showWhatToEatModal, setShowWhatToEatModal] = useState(false);
-
-    const goalLabels: Record<string, string> = {
-        lose_weight: 'Fat Loss (Defisit Kalori)',
-        maintain_weight: 'Maintain Weight (Keseimbangan Kalori)',
-        gain_muscle: 'Muscle Gain (Surplus & High Protein)',
-        improve_fitness: 'Kebugaran & Stamina Aerobik',
-    };
-
     const proteinPercent = Math.min(100, Math.round((balance.consumed_protein / balance.target_protein) * 100));
     const carbsPercent = Math.min(100, Math.round((balance.consumed_carbs / balance.target_carbs) * 100));
     const fatPercent = Math.min(100, Math.round((balance.consumed_fat / balance.target_fat) * 100));
@@ -105,384 +111,97 @@ export default function Dashboard({
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                                Calora Dashboard
-                            </h2>
-                            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                {goalLabels[profile.goal] || 'Fitness Goal'}
-                            </span>
-                            {streak > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700 border border-amber-200 shadow-sm animate-pulse">
-                                    🔥 {streak} Days Active
-                                </span>
-                            )}
+                <div className="flex min-w-0 items-center gap-3">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Tuesday / Field note</span>
+                            {streak > 0 && <span className="rounded-full bg-[#dff58d] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900">{streak} day streak</span>}
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            Move. Track. Eat Better.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setShowWhatToEatModal(true)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:from-amber-400 hover:to-orange-400 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                        >
-                            <Sparkles className="h-4 w-4" />
-                            What Should I Eat? 🍽️
-                        </button>
+                        <h1 className="mt-1 truncate font-athletic text-3xl leading-none text-slate-950 sm:text-4xl">GOOD MORNING, ATHLETE.</h1>
                     </div>
                 </div>
             }
         >
             <Head title="Dashboard - Calora" />
 
-            <div className="py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-                    {/* Calora Dynamic Insight Banner */}
-                    <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 p-6 text-white shadow-md relative overflow-hidden">
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="space-y-2 max-w-3xl">
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-400/30">
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    {insight.badge}
-                                </span>
-                                <p className="text-sm sm:text-base font-medium text-emerald-50 leading-relaxed">
-                                    {insight.message}
-                                </p>
+            <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+                <section className="relative overflow-hidden rounded-[2rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                    <img src={visualAssets.trail} alt="Jalur luar ruangan untuk berlari" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-55" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-[#111827]/25" />
+                    <div className="noise-layer pointer-events-none absolute inset-0 opacity-15" />
+                    <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1fr_0.9fr] lg:items-end lg:px-12 lg:py-12">
+                        <div className="max-w-xl">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]"><span className="h-1.5 w-1.5 rounded-full bg-[#c8f169]" /> Today’s operating system</div>
+                            <h2 className="mt-5 font-athletic text-6xl uppercase leading-[0.84] sm:text-8xl">Make the next move count.</h2>
+                            <p className="mt-6 max-w-lg text-sm leading-7 text-slate-300">{insight.message}</p>
+                            <div className="mt-7 flex flex-wrap gap-3">
+                                <Link href={route('activities.index')} className="inline-flex items-center gap-2 rounded-full bg-[#c8f169] px-5 py-3 text-xs font-black uppercase tracking-wider text-[#111827] transition hover:bg-white"><Play className="h-3.5 w-3.5 fill-current" /> Start live GPS</Link>
+                                <Link href={route('nutrition.index')} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-xs font-black uppercase tracking-wider text-white backdrop-blur transition hover:bg-white hover:text-[#111827]"><Camera className="h-3.5 w-3.5" /> Scan a plate</Link>
                             </div>
-                            <button
-                                onClick={() => setShowWhatToEatModal(true)}
-                                className="whitespace-nowrap self-start md:self-center inline-flex items-center gap-1 rounded-xl bg-white px-4 py-2 text-xs font-bold text-emerald-950 hover:bg-emerald-50 transition-all shadow"
-                            >
-                                Rekomendasi Menu
-                                <ChevronRight className="h-3.5 w-3.5" />
-                            </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 border-t border-white/20 pt-5 lg:border-l lg:border-t-0 lg:pl-8">
+                            <Metric label="Distance" value={activity_summary.total_distance_km} unit="km this week" tone="text-white" />
+                            <Metric label="Sessions" value={activity_summary.count} unit="logged" tone="text-white" />
+                            <Metric label="Goal" value={goalLabels[profile.goal] || 'Fitness'} unit="current focus" tone="text-[#c8f169]" />
                         </div>
                     </div>
+                </section>
 
-                    {/* CALORIE BALANCE & ENERGY METRICS */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Main Energy Balance Card */}
-                        <div className="lg:col-span-2 rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-bold text-gray-900 text-lg">Daily Calorie Balance</h3>
-                                    <p className="text-xs text-gray-400">Hubungan energi makanan masuk vs olahraga keluar</p>
-                                </div>
-                                <span className="text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1 rounded-lg border">
-                                    Target Dasar: {balance.target_calories} kcal
-                                </span>
-                            </div>
-
-                            {/* Flow calculation equation */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-gray-50/70 border border-gray-100 text-center">
-                                <div>
-                                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Makanan Masuk</p>
-                                    <p className="text-2xl font-extrabold text-gray-900 mt-1">{balance.consumed_calories}</p>
-                                    <span className="text-[10px] text-gray-400">kcal dikonsumsi</span>
-                                </div>
-
-                                <div>
-                                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Olahraga Terbakar</p>
-                                    <p className="text-2xl font-extrabold text-amber-500 mt-1">-{balance.burned_calories}</p>
-                                    <span className="text-[10px] text-gray-400">kcal olahraga</span>
-                                </div>
-
-                                <div>
-                                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Net Calories</p>
-                                    <p className="text-2xl font-extrabold text-teal-700 mt-1">{balance.net_calories}</p>
-                                    <span className="text-[10px] text-gray-400">kcal neto</span>
-                                </div>
-
-                                <div className="rounded-xl bg-white border border-emerald-200 p-2 shadow-sm">
-                                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Sisa Budget</p>
-                                    <p className="text-2xl font-extrabold text-emerald-600 mt-1">{balance.remaining_calories}</p>
-                                    <span className="text-[10px] text-emerald-700 font-medium">kcal tersisa</span>
-                                </div>
-                            </div>
-
-                            {/* Macro Bars */}
-                            <div className="space-y-4 pt-2">
-                                <h4 className="font-semibold text-sm text-gray-800">Distribusi Makronutrien Hari Ini</h4>
-                                
-                                <div className="space-y-3">
-                                    {/* Protein */}
-                                    <div>
-                                        <div className="flex justify-between text-xs font-medium text-gray-700 mb-1">
-                                            <span>Protein (Pemulihan Otot)</span>
-                                            <span><strong>{balance.consumed_protein}g</strong> / {balance.target_protein}g ({proteinPercent}%)</span>
-                                        </div>
-                                        <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${proteinPercent}%` }} />
-                                        </div>
-                                    </div>
-
-                                    {/* Carbs */}
-                                    <div>
-                                        <div className="flex justify-between text-xs font-medium text-gray-700 mb-1">
-                                            <span>Karbohidrat (Bahan Bakar Latihan)</span>
-                                            <span><strong>{balance.consumed_carbs}g</strong> / {balance.target_carbs}g ({carbsPercent}%)</span>
-                                        </div>
-                                        <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${carbsPercent}%` }} />
-                                        </div>
-                                    </div>
-
-                                    {/* Fat */}
-                                    <div>
-                                        <div className="flex justify-between text-xs font-medium text-gray-700 mb-1">
-                                            <span>Lemak Esensial</span>
-                                            <span><strong>{balance.consumed_fat}g</strong> / {balance.target_fat}g ({fatPercent}%)</span>
-                                        </div>
-                                        <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-rose-500 rounded-full transition-all" style={{ width: `${fatPercent}%` }} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <div className="grid gap-6 xl:grid-cols-[1.45fr_0.55fr]">
+                    <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 sm:p-8">
+                        <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start">
+                            <div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Energy ledger</span><h2 className="mt-2 font-athletic text-4xl uppercase leading-none">Daily balance</h2><p className="mt-2 text-xs text-slate-500">Satu pandangan untuk energi masuk dan energi keluar.</p></div>
+                            <span className="inline-flex items-center gap-2 self-start rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600"><Target className="h-3.5 w-3.5" /> Target {balance.target_calories} kcal</span>
                         </div>
-
-                        {/* Daily Score & Opportunity Card */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Daily Calora Score</span>
-                                    <HeartPulse className="h-4 w-4 text-emerald-600" />
-                                </div>
-
-                                <div className="mt-6 flex items-center justify-center">
-                                    <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-8 border-emerald-50 bg-emerald-50/20">
-                                        <div className="text-center">
-                                            <span className="text-4xl font-extrabold text-emerald-700">{daily_score.score}</span>
-                                            <span className="block text-xs font-semibold text-emerald-600">/ 100</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 grid grid-cols-2 gap-2 text-center text-xs">
-                                    <div className="rounded-xl bg-gray-50 p-2 border border-gray-100">
-                                        <span className="text-gray-400 block text-[10px]">AKTIVITAS</span>
-                                        <span className="font-bold text-gray-800 text-sm">{daily_score.activity_score}</span>
-                                    </div>
-                                    <div className="rounded-xl bg-gray-50 p-2 border border-gray-100">
-                                        <span className="text-gray-400 block text-[10px]">NUTRISI</span>
-                                        <span className="font-bold text-gray-800 text-sm">{daily_score.nutrition_score}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl bg-amber-50/70 border border-amber-200/60 p-4">
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800">
-                                    <Award className="h-4 w-4 text-amber-600" />
-                                    Fokus Peluang Hari Ini:
-                                </div>
-                                <p className="mt-1 text-xs text-amber-900 leading-relaxed font-medium">
-                                    {daily_score.top_opportunity}
-                                </p>
-                            </div>
+                        <div className="grid grid-cols-2 gap-4 py-7 sm:grid-cols-4">
+                            <Metric label="In" value={balance.consumed_calories} unit="kcal" />
+                            <Metric label="Out" value={`-${balance.burned_calories}`} unit="kcal" tone="text-[#fc4c02]" />
+                            <Metric label="Net" value={balance.net_calories} unit="kcal" tone="text-slate-700" />
+                            <div className="rounded-2xl bg-[#dff58d] p-3"><Metric label="Remaining" value={balance.remaining_calories} unit="kcal left" /></div>
                         </div>
-                    </div>
-
-                    {/* QUICK ACTION BUTTONS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Link
-                            href={route('nutrition.index')}
-                            className="group flex items-center justify-between rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-5 text-white shadow-sm hover:shadow-md transition-all"
-                        >
-                            <div className="flex items-center gap-3.5">
-                                <div className="rounded-xl bg-white/20 p-2.5 backdrop-blur-sm">
-                                    <Camera className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-sm">AI Food Scanner 📷</h4>
-                                    <p className="text-xs text-emerald-100">Foto & hitung kalori masakan</p>
-                                </div>
-                            </div>
-                            <ArrowUpRight className="h-5 w-5 text-emerald-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </Link>
-
-                        <Link
-                            href={route('activities.index')}
-                            className="group flex items-center justify-between rounded-2xl bg-white border border-gray-200 p-5 text-gray-800 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all"
-                        >
-                            <div className="flex items-center gap-3.5">
-                                <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
-                                    <ActivityIcon className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-sm">Catat Latihan 🏃</h4>
-                                     <p className="text-xs text-gray-400">Manual atau live GPS</p>
-                                </div>
-                            </div>
-                            <ArrowUpRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-                        </Link>
-
-                        <Link
-                            href={route('onboarding.show')}
-                            className="group flex items-center justify-between rounded-2xl bg-white border border-gray-200 p-5 text-gray-800 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all"
-                        >
-                            <div className="flex items-center gap-3.5">
-                                <div className="rounded-xl bg-orange-50 p-2.5 text-orange-600">
-                                    <Flame className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-sm">Target & Biometrik 🎯</h4>
-                                    <p className="text-xs text-gray-400">BMR: {profile.bmr} · TDEE: {profile.tdee}</p>
-                                </div>
-                            </div>
-                            <ArrowUpRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-                        </Link>
-                    </div>
-
-                    {/* TWO COLUMNS: RECENT WORKOUTS & TODAY'S FOOD LOGS */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Activities Today */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                <div className="flex items-center gap-2">
-                                    <ActivityIcon className="h-5 w-5 text-emerald-600" />
-                                    <h3 className="font-bold text-gray-900 text-base">Olahraga Hari Ini</h3>
-                                </div>
-                                <Link href={route('activities.index')} className="text-xs font-semibold text-emerald-600 hover:underline">
-                                    Lihat Semua &rarr;
-                                </Link>
-                            </div>
-
-                            {today_activities.length > 0 ? (
-                                <div className="divide-y divide-gray-100 mt-2">
-                                    {today_activities.map((act) => (
-                                        <div key={act.id} className="py-3.5 flex items-center justify-between">
-                                            <div>
-                                                <p className="font-semibold text-sm text-gray-900">{act.name}</p>
-                                                <p className="text-xs text-gray-400 mt-0.5">
-                                                    {act.distance_m ? `${(act.distance_m / 1000).toFixed(2)} km · ` : ''}
-                                                    {Math.floor(act.duration_seconds / 60)} menit
-                                                </p>
-                                            </div>
-                                            <span className="text-sm font-bold text-amber-600">
-                                                🔥 {act.calories_burned} kcal
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-8 text-center text-xs text-gray-400">
-                                    Belum ada olahraga hari ini. Catat latihan pertamamu!
-                                </div>
-                            )}
+                        <div className="space-y-4 border-t border-slate-200 pt-6">
+                            <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-600"><span className="h-2 w-2 rounded-full bg-violet-500" /> Protein</span><span className="font-metric text-xl text-slate-900">{balance.consumed_protein} / {balance.target_protein}g</span></div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${proteinPercent}%` }} /></div>
+                            <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-600"><span className="h-2 w-2 rounded-full bg-amber-500" /> Carbs</span><span className="font-metric text-xl text-slate-900">{balance.consumed_carbs} / {balance.target_carbs}g</span></div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-amber-500" style={{ width: `${carbsPercent}%` }} /></div>
+                            <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-600"><span className="h-2 w-2 rounded-full bg-rose-500" /> Fat</span><span className="font-metric text-xl text-slate-900">{balance.consumed_fat} / {balance.target_fat}g</span></div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-rose-500" style={{ width: `${fatPercent}%` }} /></div>
                         </div>
+                    </section>
 
-                        {/* Meals Today */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                <div className="flex items-center gap-2">
-                                    <Utensils className="h-5 w-5 text-emerald-600" />
-                                    <h3 className="font-bold text-gray-900 text-base">Makanan Hari Ini</h3>
-                                </div>
-                                <Link href={route('nutrition.index')} className="text-xs font-semibold text-emerald-600 hover:underline">
-                                    Buka Nutrition &rarr;
-                                </Link>
-                            </div>
+                    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#dff58d] p-6 sm:p-8">
+                        <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Daily readiness</span><HeartPulse className="h-5 w-5 text-slate-900" /></div>
+                        <div className="mt-10 flex items-end gap-3"><span className="font-metric text-8xl leading-none text-slate-950">{daily_score.score}</span><span className="pb-2 text-xs font-black uppercase tracking-widest text-slate-600">/ 100</span></div>
+                        <div className="mt-8 grid grid-cols-2 gap-2 border-t border-slate-900/15 pt-4"><div><span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Activity</span><strong className="mt-1 block font-metric text-3xl">{daily_score.activity_score}</strong></div><div><span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Nutrition</span><strong className="mt-1 block font-metric text-3xl">{daily_score.nutrition_score}</strong></div></div>
+                        <div className="mt-8 rounded-2xl bg-white/50 p-4"><span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"><CircleGauge className="h-4 w-4" /> Next best action</span><p className="mt-2 text-xs font-semibold leading-5 text-slate-700">{daily_score.top_opportunity}</p></div>
+                    </section>
+                </div>
 
-                            {today_logs.length > 0 ? (
-                                <div className="divide-y divide-gray-100 mt-2">
-                                    {today_logs.map((log) => (
-                                        <div key={log.id} className="py-3.5 flex items-center justify-between">
-                                            <div>
-                                                <span className="capitalize font-semibold text-sm text-gray-900 block">
-                                                    {log.meal_type}
-                                                </span>
-                                                <p className="text-xs text-gray-400 mt-0.5">
-                                                    {log.items?.length || 0} menu · P:{log.total_protein}g · K:{log.total_carbs}g
-                                                </p>
-                                            </div>
-                                            <span className="text-sm font-bold text-gray-800">
-                                                {log.total_calories} kcal
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-8 text-center text-xs text-gray-400">
-                                    Belum ada makanan dicatat hari ini. Gunakan AI Scanner untuk memotret piringmu!
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <section className="grid gap-3 sm:grid-cols-3">
+                    <Link href={route('activities.index')} className="group flex items-center justify-between rounded-[1.5rem] bg-[#111827] p-5 text-white transition hover:bg-[#fc4c02]"><span className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10"><Activity className="h-5 w-5 text-[#c8f169]" /></span><span><strong className="block font-athletic text-2xl">MOVE</strong><small className="text-xs text-slate-300">Log a new session</small></span></span><ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" /></Link>
+                    <Link href={route('nutrition.index')} className="group flex items-center justify-between rounded-[1.5rem] bg-white p-5 text-slate-900 ring-1 ring-slate-200 transition hover:ring-slate-900"><span className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f7d9cc]"><Utensils className="h-5 w-5 text-[#fc4c02]" /></span><span><strong className="block font-athletic text-2xl">EAT</strong><small className="text-xs text-slate-500">Scan or log a meal</small></span></span><ArrowRight className="h-5 w-5 text-slate-400 transition group-hover:translate-x-1" /></Link>
+                    <button type="button" onClick={() => setShowWhatToEatModal(true)} className="group flex items-center justify-between rounded-[1.5rem] bg-white p-5 text-left text-slate-900 ring-1 ring-slate-200 transition hover:ring-slate-900"><span className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#d8e5f0]"><Sparkles className="h-5 w-5 text-slate-700" /></span><span><strong className="block font-athletic text-2xl">NEXT</strong><small className="text-xs text-slate-500">Get a menu suggestion</small></span></span><ArrowRight className="h-5 w-5 text-slate-400 transition group-hover:translate-x-1" /></button>
+                </section>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 sm:p-8">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-4"><div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Movement log</span><h2 className="mt-2 font-athletic text-3xl uppercase">Today’s sessions</h2></div><Link href={route('activities.index')} className="text-xs font-black text-slate-500 transition hover:text-[#fc4c02]">View all <ChevronRight className="inline h-3.5 w-3.5" /></Link></div>
+                        {today_activities.length > 0 ? <div className="divide-y divide-slate-100">{today_activities.map((act) => <div key={act.id} className="flex items-center justify-between gap-4 py-4"><div><strong className="block text-sm font-bold text-slate-900">{act.name}</strong><span className="mt-1 block text-xs text-slate-500">{act.distance_m ? `${(act.distance_m / 1000).toFixed(2)} km · ` : ''}{Math.floor(act.duration_seconds / 60)} min</span></div><span className="flex items-center gap-1 font-metric text-xl text-[#fc4c02]"><Flame className="h-4 w-4" />{act.calories_burned}<small className="font-sans text-[9px] font-bold text-slate-400">KCAL</small></span></div>)}</div> : <div className="py-12 text-center"><Activity className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-600">No movement logged yet.</p><p className="mt-1 text-xs text-slate-400">Your next session belongs here.</p></div>}
+                    </section>
+                    <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 sm:p-8">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-4"><div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Nutrition log</span><h2 className="mt-2 font-athletic text-3xl uppercase">Today’s plate</h2></div><Link href={route('nutrition.index')} className="text-xs font-black text-slate-500 transition hover:text-[#fc4c02]">View all <ChevronRight className="inline h-3.5 w-3.5" /></Link></div>
+                        {today_logs.length > 0 ? <div className="divide-y divide-slate-100">{today_logs.map((log) => <div key={log.id} className="flex items-center justify-between gap-4 py-4"><div><strong className="block text-sm font-bold capitalize text-slate-900">{log.meal_type}</strong><span className="mt-1 block text-xs text-slate-500">{log.items?.length || 0} items · P {log.total_protein}g · C {log.total_carbs}g</span></div><span className="font-metric text-xl text-slate-900">{log.total_calories}<small className="ms-1 font-sans text-[9px] font-bold text-slate-400">KCAL</small></span></div>)}</div> : <div className="py-12 text-center"><Utensils className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-600">No plate logged yet.</p><p className="mt-1 text-xs text-slate-400">Use the scanner to add your first meal.</p></div>}
+                    </section>
                 </div>
             </div>
 
-            {/* "WHAT SHOULD I EAT?" SIGNATURE MODAL */}
             {showWhatToEatModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6 max-h-[85vh] overflow-y-auto">
-                        <div className="flex items-center justify-between border-b pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 p-2 text-white">
-                                    <Sparkles className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900">What Should I Eat? 🍽️</h3>
-                                    <p className="text-xs text-gray-500">Rekomendasi berbasis aktivitas & sisa budget kalori harianmu.</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowWhatToEatModal(false)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {/* Rationale Callout */}
-                        <div className="rounded-2xl bg-amber-50/70 border border-amber-200/80 p-4 text-xs text-amber-950 leading-relaxed font-medium">
-                            {recommendations.context_summary}
-                        </div>
-
-                        {/* Recommendations cards */}
-                        <div className="space-y-4">
-                            {recommendations.recommendations.map((rec, idx) => (
-                                <div key={idx} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:border-emerald-500 transition-all space-y-3">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                        <h4 className="font-bold text-base text-gray-900">{rec.title}</h4>
-                                        <div className="flex items-center gap-2">
-                                            <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                                                {rec.total_calories} kcal
-                                            </span>
-                                            <span className="rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">
-                                                {rec.total_protein}g Protein
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-xs text-gray-600 leading-relaxed">
-                                        {rec.reason}
-                                    </p>
-
-                                    <div className="pt-2 border-t border-gray-100">
-                                        <span className="text-[11px] font-semibold text-gray-400 block mb-1">KOMPONEN MENU:</span>
-                                        <ul className="text-xs text-gray-700 space-y-1">
-                                            {rec.items.map((item, i) => (
-                                                <li key={i} className="flex items-center gap-1.5">
-                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="pt-2">
-                            <Link
-                                href={route('nutrition.index')}
-                                className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Camera className="h-4 w-4" />
-                                Buka Nutrition & Catat Makanan Ini
-                            </Link>
-                        </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/70 p-4 backdrop-blur-md">
+                    <div className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] bg-[#f4f2ed] p-6 shadow-2xl sm:p-8">
+                        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5"><div><span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#fc4c02]">Next best meal</span><h2 className="mt-2 font-athletic text-4xl uppercase">Eat with context.</h2><p className="mt-2 text-xs text-slate-500">Rekomendasi berdasarkan aktivitas dan sisa budget kalori.</p></div><button type="button" onClick={() => setShowWhatToEatModal(false)} className="rounded-full p-2 text-slate-400 transition hover:bg-white hover:text-slate-900"><X className="h-5 w-5" /></button></div>
+                        <div className="mt-5 rounded-2xl bg-[#dff58d] p-4 text-sm font-semibold leading-6 text-slate-800">{recommendations.context_summary}</div>
+                        <div className="mt-5 space-y-3">{recommendations.recommendations.map((rec, index) => <div key={index} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><h3 className="font-athletic text-3xl uppercase">{rec.title}</h3><div className="flex gap-2"><span className="rounded-full bg-[#dff58d] px-3 py-1 text-xs font-black text-slate-900">{rec.total_calories} kcal</span><span className="rounded-full bg-[#d8e5f0] px-3 py-1 text-xs font-black text-slate-900">{rec.total_protein}g protein</span></div></div><p className="mt-3 text-sm leading-6 text-slate-600">{rec.reason}</p><div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">{rec.items.map((item) => <span key={item} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600"><CheckCircle2 className="h-3.5 w-3.5 text-[#fc4c02]" />{item}</span>)}</div></div>)}</div>
+                        <Link href={route('nutrition.index')} className="mt-5 flex items-center justify-center gap-2 rounded-full bg-[#111827] px-5 py-3.5 text-sm font-black text-white transition hover:bg-[#fc4c02]"><Camera className="h-4 w-4" /> Open nutrition log <ArrowRight className="h-4 w-4" /></Link>
                     </div>
                 </div>
             )}

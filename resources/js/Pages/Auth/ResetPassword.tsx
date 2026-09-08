@@ -30,11 +30,20 @@ export default function ResetPassword({
 
     return (
         <GuestLayout>
-            <Head title="Reset Password" />
+            <Head title="Buat Sandi Baru - Calora" />
 
-            <form onSubmit={submit}>
+            <div className="mb-6 text-center space-y-1">
+                <h1 className="font-athletic text-4xl tracking-wide text-slate-950">
+                    Buat Kata Sandi Baru
+                </h1>
+                <p className="text-xs text-slate-500 font-medium">
+                    Masukkan kata sandi baru untuk akun Calora milikmu.
+                </p>
+            </div>
+
+            <form onSubmit={submit} className="space-y-4">
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Alamat Email" />
 
                     <TextInput
                         id="email"
@@ -46,11 +55,11 @@ export default function ResetPassword({
                         onChange={(e) => setData('email', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.email} className="mt-1.5 text-xs text-rose-400 font-medium" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                <div>
+                    <InputLabel htmlFor="password" value="Kata Sandi Baru" />
 
                     <TextInput
                         id="password"
@@ -63,13 +72,13 @@ export default function ResetPassword({
                         onChange={(e) => setData('password', e.target.value)}
                     />
 
-                    <InputError message={errors.password} className="mt-2" />
+                    <InputError message={errors.password} className="mt-1.5 text-xs text-rose-400 font-medium" />
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <InputLabel
                         htmlFor="password_confirmation"
-                        value="Confirm Password"
+                        value="Konfirmasi Kata Sandi Baru"
                     />
 
                     <TextInput
@@ -85,13 +94,13 @@ export default function ResetPassword({
 
                     <InputError
                         message={errors.password_confirmation}
-                        className="mt-2"
+                        className="mt-1.5 text-xs text-rose-400 font-medium"
                     />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
+                <div className="pt-2">
+                    <PrimaryButton className="w-full py-3.5 text-sm font-display font-black tracking-wider" disabled={processing}>
+                        {processing ? 'Menyimpan...' : 'Perbarui Kata Sandi'}
                     </PrimaryButton>
                 </div>
             </form>

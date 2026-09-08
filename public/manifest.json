@@ -1,0 +1,65 @@
+{
+  "id": "/",
+  "name": "Calora - Fitness & Indonesian Nutrition",
+  "short_name": "Calora",
+  "description": "Pelacak kebugaran dan nutrisi masakan Indonesia dengan Live GPS dan AI Food Scanner.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "lang": "id-ID",
+  "dir": "ltr",
+  "categories": ["fitness", "health", "sports", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live GPS Tracker",
+      "short_name": "GPS",
+      "description": "Mulai rekaman rute lari atau bersepeda langsung dari browser",
+      "url": "/activities",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Food Scanner",
+      "short_name": "Scan Makanan",
+      "description": "Foto piring makan untuk analisis kalori dan makronutrisi",
+      "url": "/nutrition",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard Performa",
+      "short_name": "Dashboard",
+      "description": "Buka ringkasan keseimbangan energi dan latihan hari ini",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

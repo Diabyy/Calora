@@ -18,6 +18,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import LiveGpsModal from '@/Components/LiveGpsModal';
+import { visualAssets } from '@/data/visualAssets';
 
 interface ActivityItem {
     id: number;
@@ -94,8 +95,13 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
     const [showLogModal, setShowLogModal] = useState(false);
     const [showLiveGpsModal, setShowLiveGpsModal] = useState(false);
     const [selectedMapActivity, setSelectedMapActivity] = useState<ActivityItem | null>(null);
+    const [filterSport, setFilterSport] = useState<string>('all');
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
+
+    const filteredActivities = filterSport === 'all'
+        ? activities
+        : activities.filter((act) => act.type === filterSport);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         type: 'running',
@@ -181,28 +187,28 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                            Activity & GPS Tracking
+                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900">
+                            ACTIVITIES & LIVE GPS
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Catat latihan manual atau gunakan GPS langsung dari browser.
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
+                            Your movement log, without the noise
                         </p>
                     </div>
 
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setShowLiveGpsModal(true)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 transition-all hover:shadow-lg animate-pulse"
+                            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-all hover:shadow-md"
                         >
                             <Play className="h-3.5 w-3.5 fill-white" />
-                            Live GPS Tracker ⏱️
+                            Live GPS Tracker
                         </button>
 
                         <button
                             onClick={() => setShowLogModal(true)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all"
+                            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
                         >
-                            <Plus className="h-3.5 w-3.5 text-gray-400" />
+                            <Plus className="h-3.5 w-3.5 text-slate-400" />
                             Catat Manual
                         </button>
                     </div>
@@ -213,76 +219,110 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+                    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                        <img src={visualAssets.trail} alt="Jalur pegunungan untuk sesi outdoor" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-45" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-transparent" />
+                        <div className="relative max-w-xl px-6 py-8 sm:px-8 sm:py-10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]">Field log / movement</span>
+                            <h2 className="mt-4 font-athletic text-5xl uppercase leading-[0.88] sm:text-6xl">Every route tells you something.</h2>
+                            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">Rekam sesi baru dengan GPS browser atau tambahkan latihan manual. Data yang konsisten membuat progres lebih mudah dibaca.</p>
+                        </div>
+                    </section>
+
                     {/* Overall Stats Cards */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Jarak</span>
-                            <div className="mt-2 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-gray-900">{stats.total_distance_km}</span>
-                                <span className="text-sm font-medium text-gray-500">km</span>
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Jarak</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-slate-900">{stats.total_distance_km}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">KM</span>
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Waktu Olahraga</span>
-                            <div className="mt-2 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-gray-900">{stats.total_duration_minutes}</span>
-                                <span className="text-sm font-medium text-gray-500">menit</span>
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Durasi</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-slate-900">{stats.total_duration_minutes}</span>
+                                <span className="font-display font-bold text-xs text-slate-400 tracking-wider">MENIT</span>
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Kalori Terbakar</span>
-                            <div className="mt-2 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-amber-600">{stats.total_calories}</span>
-                                <span className="text-sm font-medium text-gray-500">kcal</span>
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kalori Terbakar</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-amber-600">{stats.total_calories}</span>
+                                <span className="font-display font-bold text-xs text-amber-600/80 tracking-wider">KCAL</span>
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Aktivitas</span>
-                            <div className="mt-2 flex items-baseline gap-1">
-                                <span className="text-3xl font-extrabold text-emerald-600">{stats.activities_count}</span>
-                                <span className="text-sm font-medium text-gray-500">sesi</span>
+                        <div className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Latihan</span>
+                            <div className="mt-2 flex items-baseline gap-1.5">
+                                <span className="font-display font-black text-3xl sm:text-4xl text-emerald-700">{stats.activities_count}</span>
+                                <span className="font-display font-bold text-xs text-emerald-600 tracking-wider">SESI</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Activity List */}
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                    <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                             <div>
-                                <h3 className="font-bold text-gray-900 text-lg">Riwayat Olahraga</h3>
-                                <p className="text-xs text-gray-500">Daftar sesi latihan yang otomatis menambah budget kalori harianmu.</p>
+                                <h3 className="font-display font-black text-xl tracking-wide uppercase text-slate-900">Riwayat Olahraga</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">Daftar sesi latihan yang otomatis dihitung dan menambah budget kalori harianmu.</p>
                             </div>
-                            <span className="text-xs text-gray-400 font-medium">
-                                GPS route tersimpan sebagai polyline
+                            <span className="text-xs font-bold text-slate-400 tracking-wider uppercase hidden sm:block">
+                                RUTE TERSIMPAN POLYLINE
                             </span>
                         </div>
 
-                        {activities.length > 0 ? (
-                            <div className="mt-4 divide-y divide-gray-100">
-                                {activities.map((act) => (
-                                    <div key={act.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="flex items-start gap-3">
-                                            <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 mt-0.5">
+                        {/* Strava-Style Sport Category Filter Tabs */}
+                        <div className="flex items-center gap-2 py-3 border-b border-slate-100 overflow-x-auto">
+                            {[
+                                { id: 'all', label: 'SEMUA OLAHRAGA' },
+                                { id: 'running', label: 'LARI' },
+                                { id: 'cycling', label: 'SEPEDA' },
+                                { id: 'walking', label: 'JALAN' },
+                                { id: 'workout', label: 'WORKOUT' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setFilterSport(tab.id)}
+                                    className={`rounded-full px-4 py-1.5 font-display font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                                        filterSport === tab.id
+                                            ? 'bg-slate-950 text-white shadow-sm'
+                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {filteredActivities.length > 0 ? (
+                            <div className="mt-4 divide-y divide-slate-100">
+                                {filteredActivities.map((act) => (
+                                    <div key={act.id} className="py-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                        <div className="flex items-start gap-3.5">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-sm mt-0.5">
                                                 <ActivityIcon className="h-5 w-5" />
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h4 className="font-bold text-sm text-gray-900">{act.name}</h4>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <h4 className="font-display font-black text-lg text-slate-900">{act.name}</h4>
                                                     {act.source === 'browser_gps' && (
-                                                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                                                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                                                             GPS Web
                                                         </span>
                                                     )}
                                                     {act.source === 'legacy_import' && (
-                                                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                                                            Import Lama
+                                                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200">
+                                                            Import
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1">
+                                                <p className="text-xs text-slate-400 font-medium mt-1">
                                                     {new Date(act.started_at).toLocaleDateString('id-ID', {
                                                         weekday: 'long',
                                                         day: 'numeric',
@@ -294,52 +334,56 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4 sm:gap-6 text-xs text-gray-600">
+                                        {/* Signature 4-column metric readout */}
+                                        <div className="flex flex-wrap items-center gap-5 sm:gap-8 bg-slate-50/70 p-3 sm:p-4 rounded-2xl border border-slate-200/70">
                                             {act.distance_m ? (
                                                 <div>
-                                                    <span className="text-gray-400 block text-[10px]">JARAK</span>
-                                                    <span className="font-bold text-gray-900 text-sm">
-                                                        {(act.distance_m / 1000).toFixed(2)} km
+                                                    <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">JARAK</span>
+                                                    <span className="font-display font-black text-xl text-slate-900">
+                                                        {(act.distance_m / 1000).toFixed(2)} <span className="text-xs font-bold text-slate-400">KM</span>
                                                     </span>
                                                 </div>
                                             ) : null}
 
                                             <div>
-                                                <span className="text-gray-400 block text-[10px]">DURASI</span>
-                                                <span className="font-bold text-gray-900 text-sm">
+                                                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">DURASI</span>
+                                                <span className="font-display font-black text-xl text-slate-900">
                                                     {formatDuration(act.duration_seconds)}
                                                 </span>
                                             </div>
 
                                             {act.avg_pace_seconds_per_km ? (
                                                 <div>
-                                                    <span className="text-gray-400 block text-[10px]">PACE</span>
-                                                    <span className="font-bold text-gray-900 text-sm">
+                                                    <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">PACE</span>
+                                                    <span className="font-display font-black text-xl text-slate-900">
                                                         {formatPace(act.avg_pace_seconds_per_km)}
                                                     </span>
                                                 </div>
                                             ) : null}
 
                                             <div>
-                                                <span className="text-gray-400 block text-[10px]">KALORI</span>
-                                                <span className="font-bold text-amber-600 text-sm">
-                                                    {act.calories_burned} kcal
+                                                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">KALORI</span>
+                                                <span className="font-display font-black text-xl text-amber-600 flex items-center gap-1">
+                                                    <Flame className="h-4 w-4 text-amber-500 fill-amber-500" />
+                                                    {act.calories_burned} <span className="text-xs font-bold text-slate-400">KCAL</span>
                                                 </span>
                                             </div>
+                                        </div>
 
+                                        <div className="flex items-center gap-2 self-end lg:self-center">
                                             {act.polyline && (
                                                 <button
                                                     onClick={() => setSelectedMapActivity(act)}
-                                                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+                                                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
                                                 >
-                                                    <MapPin className="h-3.5 w-3.5" />
-                                                    Peta Rute
+                                                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                                                    Rute Peta
                                                 </button>
                                             )}
 
                                             <button
                                                 onClick={() => handleDelete(act.id)}
-                                                className="text-gray-400 hover:text-rose-500 p-1"
+                                                className="text-slate-300 hover:text-rose-600 p-2 transition-colors rounded-xl hover:bg-rose-50"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
@@ -450,26 +494,33 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
 
             {/* LEAFLET GPS ROUTE MODAL */}
             {selectedMapActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-                        <div className="flex items-center justify-between border-b pb-3">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-3xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-4 border border-slate-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">{selectedMapActivity.name}</h3>
-                                <p className="text-xs text-gray-500">
-                                    {(Number(selectedMapActivity.distance_m) / 1000).toFixed(2)} km · {formatDuration(selectedMapActivity.duration_seconds)} · 🔥 {selectedMapActivity.calories_burned} kcal
+                                <h3 className="font-display font-black text-xl text-slate-900 tracking-wide uppercase">{selectedMapActivity.name}</h3>
+                                <p className="text-xs text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                                    <span>{(Number(selectedMapActivity.distance_m) / 1000).toFixed(2)} KM</span>
+                                    <span>·</span>
+                                    <span>{formatDuration(selectedMapActivity.duration_seconds)}</span>
+                                    <span>·</span>
+                                    <span className="flex items-center gap-1 font-bold text-amber-600">
+                                        <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                        {selectedMapActivity.calories_burned} KCAL
+                                    </span>
                                 </p>
                             </div>
-                            <button onClick={() => setSelectedMapActivity(null)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+                            <button onClick={() => setSelectedMapActivity(null)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {/* Map Canvas */}
-                        <div ref={mapContainerRef} className="h-96 w-full rounded-2xl overflow-hidden border border-gray-200 z-0" />
+                        <div ref={mapContainerRef} className="h-96 w-full rounded-2xl overflow-hidden border border-slate-200 z-0 shadow-inner" />
 
-                        <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
+                        <div className="flex items-center justify-between text-xs text-slate-400 pt-1 font-medium">
                             <span>Titik Hijau: Mulai | Titik Merah: Selesai</span>
-                            <span>Powered by Leaflet & OpenStreetMap</span>
+                            <span className="uppercase text-[10px] tracking-wider font-bold">LEAFLET & OPENSTREETMAP</span>
                         </div>
                     </div>
                 </div>

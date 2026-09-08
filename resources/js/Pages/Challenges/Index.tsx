@@ -12,6 +12,7 @@ import {
     Award,
     Clock
 } from 'lucide-react';
+import { visualAssets } from '@/data/visualAssets';
 
 interface ChallengeItem {
     id: number;
@@ -51,12 +52,12 @@ export default function ChallengesIndex({ challenges }: Props) {
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900 flex items-center gap-2">
                             <Trophy className="h-6 w-6 text-amber-500" />
-                            Calora Challenges 🏆
+                            MONTHLY CHALLENGES
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Ikuti tantangan bulanan, dorong batas kemampuanmu, dan raih lencana eksklusif.
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
+                            Choose a target. Build a streak.
                         </p>
                     </div>
                 </div>
@@ -67,14 +68,16 @@ export default function ChallengesIndex({ challenges }: Props) {
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
                     {/* Banner */}
-                    <div className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+                    <div className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] p-6 text-white shadow-xl shadow-slate-900/10 sm:p-8">
+                        <img src={visualAssets.trail} alt="Pemandangan trail untuk tantangan bulanan" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-40" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/90 to-transparent" />
                         <div className="relative z-10 max-w-2xl space-y-2">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c8f169] px-3 py-1 text-xs font-black uppercase tracking-wider text-[#111827]">
                                 <Sparkles className="h-3.5 w-3.5" />
                                 Season Milestone
                             </span>
-                            <h3 className="text-2xl sm:text-3xl font-black">Capai Target Bulananmu Bersama Calora</h3>
-                            <p className="text-xs sm:text-sm text-amber-100/90 leading-relaxed">
+                            <h3 className="font-athletic text-4xl uppercase leading-none sm:text-5xl">Make a month worth remembering.</h3>
+                            <p className="text-xs leading-relaxed text-slate-300 sm:text-sm">
                                 Setiap aktivitas olahraga yang kamu catat di Calora (Live GPS, manual, maupun sync) otomatis diakumulasikan ke tantangan yang kamu ikuti.
                             </p>
                         </div>
@@ -161,8 +164,8 @@ export default function ChallengesIndex({ challenges }: Props) {
                                         </button>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <span className="flex-1 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 py-2.5 rounded-xl border border-emerald-100">
-                                                {c.is_completed ? 'Tantangan Selesai 🎉' : 'Sedang Berjalan 🏃'}
+                                            <span className="flex-1 text-center text-xs font-bold text-emerald-800 bg-emerald-50 py-2.5 rounded-xl border border-emerald-200">
+                                                {c.is_completed ? 'Tantangan Selesai' : 'Sedang Berjalan'}
                                             </span>
                                             {!c.is_completed && (
                                                 <button

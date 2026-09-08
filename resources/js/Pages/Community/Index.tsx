@@ -13,6 +13,7 @@ import {
     Clock, 
     Sparkles 
 } from 'lucide-react';
+import { visualAssets } from '@/data/visualAssets';
 
 interface ActivityCommentItem {
     id: number;
@@ -92,12 +93,12 @@ export default function CommunityIndex({ activities, leaderboard }: Props) {
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900 flex items-center gap-2">
                             <Users className="h-6 w-6 text-emerald-600" />
-                            Calora Community & Feed
+                            COMMUNITY / SOCIAL FEED
                         </h2>
-                        <p className="text-sm text-gray-500">
-                            Bagikan pencapaian olahragamu, beri semangat teman, dan bersaing di Leaderboard mingguan.
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
+                            See how the wider field is moving
                         </p>
                     </div>
                 </div>
@@ -107,6 +108,16 @@ export default function CommunityIndex({ activities, leaderboard }: Props) {
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <section className="relative mb-8 overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
+                        <img src={visualAssets.runner} alt="Komunitas pelari berlatih bersama" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-35" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-transparent" />
+                        <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c8f169]">The wider field</span>
+                            <h2 className="mt-4 font-athletic text-5xl uppercase leading-[0.88] sm:text-6xl">A little momentum is contagious.</h2>
+                            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">Beri apresiasi, lihat progres teman, dan temukan ritme yang membuat kamu ingin kembali bergerak.</p>
+                        </div>
+                    </section>
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Feed Column (2 cols) */}
                         <div className="lg:col-span-2 space-y-6">
@@ -147,8 +158,11 @@ export default function CommunityIndex({ activities, leaderboard }: Props) {
                                                     <p className="font-extrabold text-sm text-gray-900">{formatDuration(act.duration_seconds)}</p>
                                                 </div>
                                                 <div>
-                                                    <span className="text-[10px] font-semibold text-gray-400 uppercase">KALORI</span>
-                                                    <p className="font-extrabold text-sm text-amber-600">🔥 {act.calories_burned} kcal</p>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">KALORI</span>
+                                                    <p className="font-display font-bold text-sm text-amber-600 flex items-center justify-center gap-1">
+                                                        <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                                        {act.calories_burned} KCAL
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -251,21 +265,30 @@ export default function CommunityIndex({ activities, leaderboard }: Props) {
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-black">
-                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                                                <span className={`flex h-7 w-7 items-center justify-center rounded-xl text-xs font-display font-black shadow-sm ${
+                                                    idx === 0
+                                                        ? 'bg-amber-400 text-slate-950'
+                                                        : idx === 1
+                                                        ? 'bg-slate-200 text-slate-900'
+                                                        : idx === 2
+                                                        ? 'bg-amber-100 text-amber-900'
+                                                        : 'bg-slate-100 text-slate-400 font-bold'
+                                                }`}>
+                                                    {idx === 0 ? '1' : idx === 1 ? '2' : idx === 2 ? '3' : `#${idx + 1}`}
                                                 </span>
                                                 <div>
-                                                    <p className="font-bold text-xs text-gray-900">{user.name}</p>
-                                                    <p className="text-[10px] text-gray-400">{user.sessions} sesi latihan</p>
+                                                    <p className="font-bold text-xs text-slate-900">{user.name}</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">{user.sessions} sesi latihan</p>
                                                 </div>
                                             </div>
 
                                             <div className="text-right">
-                                                <span className="font-extrabold text-sm text-emerald-600 block">
-                                                    {user.distance_km} km
+                                                <span className="font-display font-black text-sm text-emerald-700 block">
+                                                    {user.distance_km} KM
                                                 </span>
-                                                <span className="text-[10px] text-amber-600 font-semibold">
-                                                    🔥 {user.calories} kcal
+                                                <span className="text-[10px] text-amber-600 font-bold flex items-center justify-end gap-0.5">
+                                                    <Flame className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                                    {user.calories} kcal
                                                 </span>
                                             </div>
                                         </div>
