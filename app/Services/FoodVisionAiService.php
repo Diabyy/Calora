@@ -9,6 +9,7 @@ use App\Services\Vision\VisionProvider;
 use App\Services\Vision\VisionProviderException;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -44,13 +45,25 @@ class FoodVisionAiService
      */
     public function analyzeFoodImage(UploadedFile $image): array
     {
+        $realPath = $image->getRealPath();
+        $imageHash = $realPath ? hash_file('sha256', $realPath) : null;
+        $cacheKey = $imageHash ? "calora:food_vision:sha256:{$imageHash}" : null;
+
+        if ($cacheKey && ($cached = Cache::get($cacheKey))) {
+            Log::info('Food vision served from SHA-256 image cache', ['hash' => $imageHash]);
+
+            return $cached;
+        }
+
         $imageData = $this->prepareImage($image);
 
         /** @var EloquentCollection<int, IndonesianFood> $foods */
-        $foods = IndonesianFood::query()
-            ->with('aliases')
-            ->orderBy('name')
-            ->get();
+        $foods = Cache::remember('calora:tkpi:foods_with_aliases', now()->addDay(), function () {
+            return IndonesianFood::query()
+                ->with('aliases')
+                ->orderBy('name')
+                ->get();
+        });
         $prompt = $this->buildVisionPrompt($foods);
         $providers = [
             'gemini' => $this->geminiProvider,
@@ -86,6 +99,10 @@ class FoodVisionAiService
 
                 $result = $this->enrichWithDatabaseMatches($normalizedResponse, $foods);
                 if ($result['status'] === 'detected') {
+                    if ($cacheKey) {
+                        Cache::put($cacheKey, $result, now()->addDays(7));
+                    }
+
                     return $result;
                 }
 

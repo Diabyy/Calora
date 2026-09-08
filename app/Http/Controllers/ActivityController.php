@@ -8,6 +8,7 @@ use App\Services\GpsRouteService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -127,6 +128,8 @@ class ActivityController extends Controller
             'ended_at' => $endedAt,
         ]);
 
+        Cache::forget("calora:user:{$user->id}:streak:".Carbon::today()->toDateString());
+
         return redirect()->back()->with('success', 'Aktivitas berhasil dicatat!');
     }
 
@@ -139,7 +142,10 @@ class ActivityController extends Controller
             abort(403);
         }
 
+        $userId = $activity->user_id;
         $activity->delete();
+
+        Cache::forget("calora:user:{$userId}:streak:".Carbon::today()->toDateString());
 
         return redirect()->back()->with('success', 'Aktivitas berhasil dihapus.');
     }

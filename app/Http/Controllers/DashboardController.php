@@ -9,6 +9,7 @@ use App\Services\MealRecommendationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -69,12 +70,15 @@ class DashboardController extends Controller
         $dailyScore = (int) round(($nutritionScore * 0.5) + ($activityScore * 0.5));
 
         // 6. Signature Feature: "What Should I Eat?" recommendation
-        $recommendations = $this->mealService->getRecommendations(
-            $user,
-            $remainingCalories,
-            $proteinDeficit,
-            $burnedCalories
-        );
+        $recCacheKey = "calora:user:{$user->id}:recommendations:{$today}:".md5("{$remainingCalories}_{$proteinDeficit}_{$burnedCalories}");
+        $recommendations = Cache::remember($recCacheKey, now()->addHours(2), function () use ($user, $remainingCalories, $proteinDeficit, $burnedCalories) {
+            return $this->mealService->getRecommendations(
+                $user,
+                $remainingCalories,
+                $proteinDeficit,
+                $burnedCalories
+            );
+        });
 
         // 7. Dynamic Calora Insight text
         $insight = $this->generateInsight(
@@ -86,8 +90,12 @@ class DashboardController extends Controller
         );
 
         // Evaluate achievements & calculate streak
-        $this->gamificationService->evaluateAchievements($user);
-        $streak = $this->gamificationService->calculateStreak($user);
+        $streakCacheKey = "calora:user:{$user->id}:streak:{$today}";
+        $streak = Cache::remember($streakCacheKey, now()->addMinutes(30), function () use ($user) {
+            $this->gamificationService->evaluateAchievements($user);
+
+            return $this->gamificationService->calculateStreak($user);
+        });
 
         return Inertia::render('Dashboard', [
             'profile' => $profile,

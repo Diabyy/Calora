@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -64,14 +65,21 @@ class NutritionController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $query = $request->query('q', '');
+        $query = trim((string) $request->query('q', ''));
         $category = $request->query('category');
 
-        $foods = IndonesianFood::query()
-            ->when($query, fn ($q) => $q->where('name', 'like', "%{$query}%"))
-            ->when($category, fn ($q) => $q->where('category', $category))
-            ->limit(25)
-            ->get();
+        $cacheKey = 'calora:tkpi:search:'.md5(mb_strtolower($query).':'.($category ?? 'all'));
+
+        $foods = Cache::remember($cacheKey, now()->addHours(12), function () use ($query, $category) {
+            return IndonesianFood::query()
+                ->when($query, function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                        ->orWhereHas('aliases', fn ($aq) => $aq->where('alias', 'like', "%{$query}%"));
+                })
+                ->when($category, fn ($q) => $q->where('category', $category))
+                ->limit(25)
+                ->get();
+        });
 
         return response()->json($foods);
     }
@@ -295,6 +303,8 @@ class NutritionController extends Controller
             $log->save();
         });
 
+        Cache::forget("calora:user:{$user->id}:streak:".Carbon::today()->toDateString());
+
         return redirect()->back()->with('success', 'Makanan berhasil dicatat!');
     }
 
@@ -308,6 +318,7 @@ class NutritionController extends Controller
             abort(403);
         }
 
+        $userId = $log->user_id;
         $item->delete();
 
         if ($log->items()->count() === 0) {
@@ -319,6 +330,8 @@ class NutritionController extends Controller
             $log->total_fat = (float) round($log->items()->sum('fat'), 1);
             $log->save();
         }
+
+        Cache::forget("calora:user:{$userId}:streak:".Carbon::today()->toDateString());
 
         return redirect()->back()->with('success', 'Item makanan berhasil dihapus');
     }
