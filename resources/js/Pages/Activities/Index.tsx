@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
@@ -14,11 +14,11 @@ import {
     X, 
     Award,
 } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
-import LiveGpsModal from '@/Components/LiveGpsModal';
 import { visualAssets } from '@/data/visualAssets';
+
+const ActivityRouteMapModal = React.lazy(() => import('@/Components/ActivityRouteMapModal'));
+const LiveGpsModal = React.lazy(() => import('@/Components/LiveGpsModal'));
 
 interface ActivityItem {
     id: number;
@@ -45,59 +45,11 @@ interface Props {
     };
 }
 
-// Simple Polyline decoder (Google Encoded Polyline Algorithm Format)
-function decodePolyline(str: string, precision = 5): [number, number][] {
-    let index = 0,
-        lat = 0,
-        lng = 0,
-        coordinates: [number, number][] = [],
-        shift = 0,
-        result = 0,
-        byte = null,
-        latitude_change,
-        longitude_change,
-        factor = Math.pow(10, precision);
-
-    while (index < str.length) {
-        byte = null;
-        shift = 0;
-        result = 0;
-
-        do {
-            byte = str.charCodeAt(index++) - 63;
-            result |= (byte & 0x1f) << shift;
-            shift += 5;
-        } while (byte >= 0x20);
-
-        latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
-        shift = 0;
-        result = 0;
-
-        do {
-            byte = str.charCodeAt(index++) - 63;
-            result |= (byte & 0x1f) << shift;
-            shift += 5;
-        } while (byte >= 0x20);
-
-        longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
-        lat += latitude_change;
-        lng += longitude_change;
-
-        coordinates.push([lat / factor, lng / factor]);
-    }
-
-    return coordinates;
-}
-
 export default function ActivitiesIndex({ activities, stats }: Props) {
     const [showLogModal, setShowLogModal] = useState(false);
     const [showLiveGpsModal, setShowLiveGpsModal] = useState(false);
     const [selectedMapActivity, setSelectedMapActivity] = useState<ActivityItem | null>(null);
     const [filterSport, setFilterSport] = useState<string>('all');
-    const mapContainerRef = useRef<HTMLDivElement | null>(null);
-    const mapInstanceRef = useRef<L.Map | null>(null);
 
     const filteredActivities = filterSport === 'all'
         ? activities
@@ -140,47 +92,6 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
             router.delete(route('activities.destroy', { activity: id }));
         }
     };
-
-    // Render Leaflet Map when polyline modal opens
-    useEffect(() => {
-        if (!selectedMapActivity || !selectedMapActivity.polyline || !mapContainerRef.current) return;
-
-        // Cleanup previous map instance if any
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.remove();
-            mapInstanceRef.current = null;
-        }
-
-        const coords = decodePolyline(selectedMapActivity.polyline);
-        if (coords.length === 0) return;
-
-        const map = L.map(mapContainerRef.current).setView(coords[0], 14);
-        mapInstanceRef.current = map;
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-        }).addTo(map);
-
-        const polylineLayer = L.polyline(coords, {
-            color: '#10b981',
-            weight: 5,
-            opacity: 0.9,
-            lineJoin: 'round',
-        }).addTo(map);
-
-        map.fitBounds(polylineLayer.getBounds(), { padding: [30, 30] });
-
-        // Add start & finish markers
-        L.circleMarker(coords[0], { radius: 7, color: '#059669', fillColor: '#34d399', fillOpacity: 1 }).addTo(map);
-        L.circleMarker(coords[coords.length - 1], { radius: 7, color: '#dc2626', fillColor: '#f87171', fillOpacity: 1 }).addTo(map);
-
-        return () => {
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.remove();
-                mapInstanceRef.current = null;
-            }
-        };
-    }, [selectedMapActivity]);
 
     return (
         <AuthenticatedLayout
@@ -492,45 +403,32 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
                 </div>
             )}
 
-            {/* LEAFLET GPS ROUTE MODAL */}
+            {/* LEAFLET GPS ROUTE MODAL (Lazy-loaded on demand) */}
             {selectedMapActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-                    <div className="relative w-full max-w-3xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-4 border border-slate-200">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 className="font-display font-black text-xl text-slate-900 tracking-wide uppercase">{selectedMapActivity.name}</h3>
-                                <p className="text-xs text-slate-400 font-medium flex items-center gap-2 mt-0.5">
-                                    <span>{(Number(selectedMapActivity.distance_m) / 1000).toFixed(2)} KM</span>
-                                    <span>·</span>
-                                    <span>{formatDuration(selectedMapActivity.duration_seconds)}</span>
-                                    <span>·</span>
-                                    <span className="flex items-center gap-1 font-bold text-amber-600">
-                                        <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                        {selectedMapActivity.calories_burned} KCAL
-                                    </span>
-                                </p>
-                            </div>
-                            <button onClick={() => setSelectedMapActivity(null)} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {/* Map Canvas */}
-                        <div ref={mapContainerRef} className="h-96 w-full rounded-2xl overflow-hidden border border-slate-200 z-0 shadow-inner" />
-
-                        <div className="flex items-center justify-between text-xs text-slate-400 pt-1 font-medium">
-                            <span>Titik Hijau: Mulai | Titik Merah: Selesai</span>
-                            <span className="uppercase text-[10px] tracking-wider font-bold">LEAFLET & OPENSTREETMAP</span>
+                <React.Suspense fallback={
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+                        <div className="rounded-3xl bg-white p-8 text-center shadow-2xl border border-slate-200">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500 mx-auto" />
+                            <p className="mt-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Memuat Peta Rute...</p>
                         </div>
                     </div>
-                </div>
+                }>
+                    <ActivityRouteMapModal
+                        activity={selectedMapActivity}
+                        onClose={() => setSelectedMapActivity(null)}
+                    />
+                </React.Suspense>
             )}
 
-            {/* LIVE WEB GPS TRACKER MODAL */}
-            <LiveGpsModal
-                isOpen={showLiveGpsModal}
-                onClose={() => setShowLiveGpsModal(false)}
-            />
+            {/* LIVE WEB GPS TRACKER MODAL (Lazy-loaded on demand) */}
+            {showLiveGpsModal && (
+                <React.Suspense fallback={null}>
+                    <LiveGpsModal
+                        isOpen={showLiveGpsModal}
+                        onClose={() => setShowLiveGpsModal(false)}
+                    />
+                </React.Suspense>
+            )}
         </AuthenticatedLayout>
     );
 }

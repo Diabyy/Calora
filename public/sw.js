@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calora-shell-v1';
+const CACHE_NAME = 'calora-shell-v2';
 const STATIC_ASSETS = [
   '/',
   '/offline.html',
@@ -8,6 +8,10 @@ const STATIC_ASSETS = [
   '/icons/icon-512.png',
   '/icons/icon-maskable-512.png',
   '/icons/apple-touch-icon.png',
+  '/images/runner.webp',
+  '/images/trail.webp',
+  '/images/food.webp',
+  '/images/breakfast.webp',
   '/favicon.ico'
 ];
 
@@ -79,9 +83,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Static Assets (Vite build chunks, icons, fonts): Cache-first with Stale-while-revalidate
+  // 2. Static Assets (Vite build chunks, icons, images, fonts): Cache-first with Stale-while-revalidate
   const isStaticAsset = url.pathname.startsWith('/build/') || 
                         url.pathname.startsWith('/icons/') || 
+                        url.pathname.startsWith('/images/') || 
                         isGoogleFont;
 
   if (isStaticAsset) {

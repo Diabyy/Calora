@@ -17,22 +17,9 @@ import {
     Trophy,
     CheckCircle
 } from 'lucide-react';
-import {
-    ResponsiveContainer,
-    LineChart,
-    Line,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ReferenceLine,
-    AreaChart,
-    Area
-} from 'recharts';
 import { visualAssets } from '@/data/visualAssets';
+
+const ProgressChartsSection = React.lazy(() => import('@/Components/ProgressChartsSection'));
 
 interface WeightHistoryPoint {
     date: string;
@@ -235,145 +222,65 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
                         </div>
                     </div>
 
-                    {/* SECTION: 2 COLUMNS CHARTS */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* CHART 1: WEIGHT TRAJECTORY */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-bold text-gray-900 text-base">Weight Trajectory (kg)</h3>
-                                    <p className="text-xs text-gray-400">Riwayat perkembangan timbangan berat badan</p>
-                                </div>
-                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                                    Target: {profile.goal === 'lose_weight' ? `${analytics.weight.current - 5} kg` : 'Maintain'}
-                                </span>
-                            </div>
-
-                            <div className="h-72 w-full pt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={analytics.weight.history} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="date" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <YAxis domain={['dataMin - 2', 'dataMax + 2']} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
-                                            formatter={(value: any) => [`${value} kg`, 'Berat Badan']}
-                                        />
-                                        <Area type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#weightGrad)" dot={{ r: 4, fill: '#059669' }} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
+                    {/* SECTION: 2 COLUMNS CHARTS & ACHIEVEMENTS (Lazy-loaded code split) */}
+                    <React.Suspense fallback={
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-pulse">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="h-80 rounded-3xl bg-slate-200/60 p-6 border border-slate-200" />
+                            ))}
                         </div>
-
-                        {/* CHART 2: CALORIE IN VS OUT */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between">
+                    }>
+                        <ProgressChartsSection analytics={analytics} profile={profile}>
+                            {/* SECTION: ACHIEVEMENTS & BADGES GRID */}
+                            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="font-bold text-gray-900 text-base">Daily Energy Balance (7 Hari)</h3>
-                                    <p className="text-xs text-gray-400">Kalori Makanan Masuk vs Olahraga Terbakar</p>
-                                </div>
-                                <span className="text-xs text-gray-500 bg-gray-50 border px-2.5 py-1 rounded-lg">
-                                    Target: {profile.daily_calorie_target} kcal
-                                </span>
-                            </div>
-
-                            <div className="h-72 w-full pt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={analytics.calorie_trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="date" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <YAxis tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
-                                        />
-                                        <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                                        <ReferenceLine y={profile.daily_calorie_target} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Target', fill: '#f59e0b', fontSize: 10 }} />
-                                        <Bar dataKey="consumed" name="Makanan (kcal)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="burned" name="Olahraga (kcal)" fill="#f97316" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* CHART 3: WEEKLY WORKOUT VOLUME */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-bold text-gray-900 text-base">Weekly Activity Volume (4 Minggu)</h3>
-                                    <p className="text-xs text-gray-400">Total akumulasi kilometer lari & bersepeda</p>
-                                </div>
-                            </div>
-
-                            <div className="h-72 w-full pt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={analytics.activity_trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="week" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <YAxis tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
-                                        />
-                                        <Bar dataKey="distance_km" name="Jarak (km)" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* SECTION: ACHIEVEMENTS & BADGES GRID */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-4 flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                                    <div className="flex items-center gap-2">
-                                        <Award className="h-5 w-5 text-amber-500" />
-                                        <h3 className="font-bold text-gray-900 text-base">Lencana Pencapaian (Badges)</h3>
+                                    <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                                        <div className="flex items-center gap-2">
+                                            <Award className="h-5 w-5 text-amber-500" />
+                                            <h3 className="font-bold text-gray-900 text-base">Lencana Pencapaian (Badges)</h3>
+                                        </div>
+                                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                                            {unlockedCount} diraih
+                                        </span>
                                     </div>
-                                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                                        {unlockedCount} diraih
-                                    </span>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-3 mt-4">
-                                    {achievements.map((ach) => (
-                                        <div
-                                            key={ach.id}
-                                            className={`p-3.5 rounded-2xl border transition-all ${
-                                                ach.is_unlocked
-                                                    ? 'border-amber-200 bg-amber-50/50 shadow-sm'
-                                                    : 'border-gray-100 bg-gray-50/60 opacity-60'
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="font-bold text-xs text-gray-900">{ach.title}</h4>
+                                    <div className="grid grid-cols-2 gap-3 mt-4">
+                                        {achievements.map((ach) => (
+                                            <div
+                                                key={ach.id}
+                                                className={`p-3.5 rounded-2xl border transition-all ${
+                                                    ach.is_unlocked
+                                                        ? 'border-amber-200 bg-amber-50/50 shadow-sm'
+                                                        : 'border-gray-100 bg-gray-50/60 opacity-60'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-bold text-xs text-gray-900">{ach.title}</h4>
+                                                    {ach.is_unlocked && (
+                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                                                            +{ach.points} XP
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                                                    {ach.description}
+                                                </p>
                                                 {ach.is_unlocked && (
-                                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                                                        +{ach.points} XP
+                                                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold mt-2">
+                                                        <CheckCircle className="h-3 w-3 text-emerald-600" /> Terbuka: {ach.unlocked_at}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                                                {ach.description}
-                                            </p>
-                                            {ach.is_unlocked && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold mt-2">
-                                                    <CheckCircle className="h-3 w-3 text-emerald-600" /> Terbuka: {ach.unlocked_at}
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <p className="text-[11px] text-gray-400 text-center pt-2">
-                                Konsisten catat olahraga & nutrisi harian untuk membuka lencana berikutnya!
-                            </p>
-                        </div>
-                    </div>
+                                <p className="text-[11px] text-gray-400 text-center pt-2">
+                                    Konsisten catat olahraga & nutrisi harian untuk membuka lencana berikutnya!
+                                </p>
+                            </div>
+                        </ProgressChartsSection>
+                    </React.Suspense>
                 </div>
             </div>
 
