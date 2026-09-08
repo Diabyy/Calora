@@ -11,14 +11,16 @@ class GpsRouteService
     private const MIN_SEGMENT_METERS = 1.0;
 
     /**
-     * @param  array<int, array{lat: float|int, lng: float|int, accuracy: float|int, timestamp: int}>  $points
-     * @return array{polyline: string|null, distance_m: float, point_count: int, max_accuracy_m: float|null}
+     * @param  array<int, array{lat: float|int, lng: float|int, accuracy: float|int, timestamp: int, altitude?: float|int|null}>  $points
+     * @return array{polyline: string|null, distance_m: float, elevation_gain_m: float, point_count: int, max_accuracy_m: float|null}
      */
     public function process(array $points): array
     {
         $acceptedPoints = [];
         $previousPoint = null;
         $distanceMeters = 0.0;
+        $elevationGainM = 0.0;
+        $previousAltitude = null;
         $maxAccuracy = null;
 
         foreach ($points as $point) {
@@ -26,6 +28,9 @@ class GpsRouteService
             $longitude = (float) $point['lng'];
             $accuracy = (float) $point['accuracy'];
             $timestamp = (int) $point['timestamp'];
+            $altitude = isset($point['altitude']) && is_numeric($point['altitude'])
+                ? (float) $point['altitude']
+                : null;
 
             if (
                 ! is_finite($latitude)
@@ -52,6 +57,9 @@ class GpsRouteService
             if ($previousPoint === null) {
                 $acceptedPoints[] = $currentPoint;
                 $previousPoint = $currentPoint;
+                if ($altitude !== null) {
+                    $previousAltitude = $altitude;
+                }
 
                 continue;
             }
@@ -78,11 +86,24 @@ class GpsRouteService
 
             $distanceMeters += $segmentDistance;
             $acceptedPoints[] = $currentPoint;
+
+            // Calculate vertical climb/elevation gain with noise threshold
+            if ($altitude !== null) {
+                if ($previousAltitude !== null) {
+                    $gain = $altitude - $previousAltitude;
+                    // Require at least 1.0m climb, filter out unrealistic single-step jumps (>150m)
+                    if ($gain > 1.0 && $gain < 150.0) {
+                        $elevationGainM += $gain;
+                    }
+                }
+                $previousAltitude = $altitude;
+            }
         }
 
         return [
             'polyline' => $acceptedPoints === [] ? null : $this->encodePolyline($acceptedPoints),
             'distance_m' => round($distanceMeters, 2),
+            'elevation_gain_m' => round($elevationGainM, 1),
             'point_count' => count($acceptedPoints),
             'max_accuracy_m' => $maxAccuracy === null ? null : round($maxAccuracy, 2),
         ];

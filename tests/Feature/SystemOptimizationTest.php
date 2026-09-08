@@ -7,6 +7,7 @@ use App\Models\IndonesianFood;
 use App\Models\IndonesianFoodAlias;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\GpsRouteService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -206,5 +207,58 @@ class SystemOptimizationTest extends TestCase
         ])->assertRedirect();
 
         $this->assertFalse(Cache::has($streakKey));
+    }
+
+    public function test_gps_route_service_calculates_elevation_gain_with_noise_filtering(): void
+    {
+        $service = app(GpsRouteService::class);
+
+        $points = [
+            ['lat' => -6.2000, 'lng' => 106.8166, 'accuracy' => 5, 'timestamp' => 1000, 'altitude' => 20.0],
+            ['lat' => -6.2005, 'lng' => 106.8168, 'accuracy' => 5, 'timestamp' => 2000, 'altitude' => 20.5], // +0.5m ignored as jitter (< 1.0m)
+            ['lat' => -6.2010, 'lng' => 106.8170, 'accuracy' => 5, 'timestamp' => 3000, 'altitude' => 25.0], // +4.5m climb (counted)
+            ['lat' => -6.2015, 'lng' => 106.8172, 'accuracy' => 5, 'timestamp' => 4000, 'altitude' => 22.0], // descent (not added to gain)
+            ['lat' => -6.2020, 'lng' => 106.8174, 'accuracy' => 5, 'timestamp' => 5000, 'altitude' => 27.5], // +5.5m climb (counted)
+        ];
+
+        $result = $service->process($points);
+
+        $this->assertNotNull($result['polyline']);
+        $this->assertGreaterThan(100, $result['distance_m']);
+        $this->assertSame(5, $result['point_count']);
+        // Gain: 20.5 to 25.0 = 4.5m, 22.0 to 27.5 = 5.5m => Total gain = 10.0m
+        $this->assertSame(10.0, $result['elevation_gain_m']);
+    }
+
+    public function test_browser_gps_activity_stores_elevation_gain_from_route_points(): void
+    {
+        $user = User::factory()->create();
+
+        $startedAt = now()->subMinutes(10);
+        $endedAt = now();
+
+        $points = [
+            ['lat' => -6.2000, 'lng' => 106.8166, 'accuracy' => 8, 'timestamp' => 1000, 'altitude' => 15.0],
+            ['lat' => -6.2010, 'lng' => 106.8170, 'accuracy' => 8, 'timestamp' => 2000, 'altitude' => 22.0], // +7m climb
+            ['lat' => -6.2020, 'lng' => 106.8175, 'accuracy' => 8, 'timestamp' => 3000, 'altitude' => 30.0], // +8m climb
+        ];
+
+        $response = $this->actingAs($user)->post('/activities', [
+            'type' => 'running',
+            'source' => 'browser_gps',
+            'name' => 'Sesi Lari Menanjak',
+            'duration_minutes' => 10,
+            'started_at' => $startedAt->toISOString(),
+            'ended_at' => $endedAt->toISOString(),
+            'route_points' => $points,
+        ]);
+
+        $response->assertRedirect();
+
+        $activity = Activity::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('browser_gps', $activity->source);
+        $this->assertSame(15.0, (float) $activity->elevation_gain_m);
+        $this->assertNotNull($activity->polyline);
+        $this->assertSame(3, $activity->gps_point_count);
     }
 }

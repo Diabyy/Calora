@@ -11,7 +11,9 @@ import {
     Timer, 
     Gauge,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    Volume2,
+    VolumeX
 } from 'lucide-react';
 import L from 'leaflet';
 
@@ -38,11 +40,12 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 interface GpsPoint {
-    [key: string]: number;
+    [key: string]: number | null | undefined;
     lat: number;
     lng: number;
     accuracy: number;
     timestamp: number;
+    altitude?: number | null;
 }
 
 const GPS_DRAFT_KEY = 'calora:browser-gps-session';
@@ -54,6 +57,8 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const [status, setStatus] = useState<'idle' | 'running' | 'paused' | 'finished'>('idle');
     const [seconds, setSeconds] = useState(0);
     const [distanceMeters, setDistanceMeters] = useState(0);
+    const [elevationGainMeters, setElevationGainMeters] = useState(0);
+    const [voiceEnabled, setVoiceEnabled] = useState(true);
     const [coords, setCoords] = useState<GpsPoint[]>([]);
     const [gpsError, setGpsError] = useState<string | null>(null);
 
@@ -64,6 +69,8 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const watchIdRef = useRef<number | null>(null);
     const wakeLockRef = useRef<any>(null);
     const lastPointRef = useRef<GpsPoint | null>(null);
+    const lastAltitudeRef = useRef<number | null>(null);
+    const lastAnnouncedKmRef = useRef<number>(0);
     const sessionStartedAtRef = useRef<number | null>(null);
     const pausedStartedAtRef = useRef<number | null>(null);
     const pausedSecondsRef = useRef(0);
@@ -228,6 +235,35 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         return 'Lokasi tidak dapat diperoleh dari perangkat.';
     };
 
+    // Audio pacing announcement via Web Speech API every completed 1 KM
+    useEffect(() => {
+        if (!voiceEnabled || status !== 'running' || typeof window === 'undefined' || !('speechSynthesis' in window)) {
+            return;
+        }
+
+        const currentKm = Math.floor(distanceMeters / 1000);
+        if (currentKm > lastAnnouncedKmRef.current && currentKm >= 1) {
+            lastAnnouncedKmRef.current = currentKm;
+
+            const distKm = distanceMeters / 1000;
+            const paceSecs = Math.round(seconds / distKm);
+            const pMins = Math.floor(paceSecs / 60);
+            const pSecs = paceSecs % 60;
+
+            const speechText = `Kilometer ${currentKm} selesai. Waktu ${Math.floor(seconds / 60)} menit. Pace rata-rata ${pMins} menit ${pSecs} detik per kilometer.`;
+
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(speechText);
+                utterance.lang = 'id-ID';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                console.warn('Web Speech API notification error:', err);
+            }
+        }
+    }, [distanceMeters, seconds, status, voiceEnabled]);
+
     // START ACTIVITY
     const handleStart = () => {
         if (!('geolocation' in navigator)) {
@@ -241,6 +277,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
 
         if (sessionStartedAtRef.current === null) {
             sessionStartedAtRef.current = Date.now();
+            lastAnnouncedKmRef.current = Math.floor(distanceMeters / 1000);
         }
         if (pausedStartedAtRef.current !== null) {
             pausedSecondsRef.current += Math.max(0, Math.round((Date.now() - pausedStartedAtRef.current) / 1000));
@@ -254,11 +291,17 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
 
         const id = navigator.geolocation.watchPosition(
             (pos) => {
+                const rawAlt = pos.coords.altitude;
+                const altitude = typeof rawAlt === 'number' && !isNaN(rawAlt)
+                    ? Math.round(rawAlt * 10) / 10
+                    : null;
+
                 const newPoint: GpsPoint = {
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
                     accuracy: pos.coords.accuracy,
                     timestamp: pos.timestamp,
+                    altitude,
                 };
 
                 if (newPoint.accuracy > MAX_GPS_ACCURACY_METERS) {
@@ -289,8 +332,22 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                     }
 
                     setDistanceMeters((distance) => distance + segmentDistance);
+
+                    // Calculate elevation gain
+                    if (altitude !== null) {
+                        if (lastAltitudeRef.current !== null) {
+                            const altDiff = altitude - lastAltitudeRef.current;
+                            if (altDiff > 1.2 && altDiff < 100) {
+                                setElevationGainMeters((prev) => Math.round((prev + altDiff) * 10) / 10);
+                            }
+                        }
+                        lastAltitudeRef.current = altitude;
+                    }
                 } else {
                     lastPointRef.current = newPoint;
+                    if (altitude !== null) {
+                        lastAltitudeRef.current = altitude;
+                    }
                 }
 
                 setGpsError(null);
@@ -406,17 +463,43 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                         <h3 className="font-bold text-base">Live Web GPS Tracker</h3>
                     </div>
 
-                    <button
-                        onClick={() => {
-                            if (status === 'running') {
-                                handlePause();
-                            }
-                            onClose();
-                        }}
-                        className="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Audio Pacing Voice Toggle */}
+                        <button
+                            type="button"
+                            onClick={() => setVoiceEnabled((prev) => !prev)}
+                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                                voiceEnabled
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                            }`}
+                            title={voiceEnabled ? 'Pemberitahuan suara aktif tiap 1 KM' : 'Pemberitahuan suara dimatikan'}
+                        >
+                            {voiceEnabled ? (
+                                <>
+                                    <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
+                                    <span>Voice On</span>
+                                </>
+                            ) : (
+                                <>
+                                    <VolumeX className="h-3.5 w-3.5 text-slate-400" />
+                                    <span>Mute</span>
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                if (status === 'running') {
+                                    handlePause();
+                                }
+                                onClose();
+                            }}
+                            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Leaflet Map Canvas */}
@@ -459,6 +542,19 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                             <span className="text-[9px] font-black text-slate-500 block tracking-widest">KCAL</span>
                         </div>
                     </div>
+
+                    {/* Elevation Telemetry Strip */}
+                    {elevationGainMeters > 0 && (
+                        <div className="flex items-center justify-between rounded-xl bg-slate-900/60 px-4 py-2 border border-slate-800/80 text-xs">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                Total Elevasi Mendaki (Climb)
+                            </span>
+                            <div className="flex items-baseline gap-1">
+                                <span className="font-metric text-lg text-emerald-400 font-bold">+{Math.round(elevationGainMeters)}</span>
+                                <span className="text-[10px] font-bold text-slate-400">M</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Sport Type Selector when idle */}
                     {status === 'idle' && (

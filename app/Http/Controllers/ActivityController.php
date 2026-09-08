@@ -64,6 +64,7 @@ class ActivityController extends Controller
             'route_points.*.lng' => ['required', 'numeric', 'between:-180,180'],
             'route_points.*.accuracy' => ['required', 'numeric', 'min:0', 'max:100'],
             'route_points.*.timestamp' => ['required', 'integer', 'min:1'],
+            'route_points.*.altitude' => ['nullable', 'numeric'],
         ]);
 
         $user = $request->user();
@@ -74,6 +75,7 @@ class ActivityController extends Controller
         $routeMetrics = [
             'polyline' => null,
             'distance_m' => null,
+            'elevation_gain_m' => null,
             'point_count' => null,
             'max_accuracy_m' => null,
         ];
@@ -120,7 +122,7 @@ class ActivityController extends Controller
             'calories_burned' => $calories,
             'avg_pace_seconds_per_km' => $paceSeconds,
             'avg_speed_kmh' => $speedKmh,
-            'elevation_gain_m' => $validated['elevation_gain_m'] ?? null,
+            'elevation_gain_m' => $isBrowserGps ? $routeMetrics['elevation_gain_m'] : ($validated['elevation_gain_m'] ?? null),
             'polyline' => $routeMetrics['polyline'],
             'gps_point_count' => $routeMetrics['point_count'],
             'max_accuracy_m' => $routeMetrics['max_accuracy_m'],
