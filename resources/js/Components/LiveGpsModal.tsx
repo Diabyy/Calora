@@ -59,6 +59,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const [distanceMeters, setDistanceMeters] = useState(0);
     const [elevationGainMeters, setElevationGainMeters] = useState(0);
     const [voiceEnabled, setVoiceEnabled] = useState(true);
+    const [currentAccuracy, setCurrentAccuracy] = useState<number | null>(null);
     const [coords, setCoords] = useState<GpsPoint[]>([]);
     const [gpsError, setGpsError] = useState<string | null>(null);
 
@@ -66,6 +67,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const mapInstanceRef = useRef<L.Map | null>(null);
     const polylineRef = useRef<L.Polyline | null>(null);
     const currentMarkerRef = useRef<L.CircleMarker | null>(null);
+    const accuracyCircleRef = useRef<L.Circle | null>(null);
     const watchIdRef = useRef<number | null>(null);
     const wakeLockRef = useRef<any>(null);
     const lastPointRef = useRef<GpsPoint | null>(null);
@@ -109,6 +111,10 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
             }
             releaseWakeLock();
             currentMarkerRef.current = null;
+            if (accuracyCircleRef.current) {
+                accuracyCircleRef.current.remove();
+                accuracyCircleRef.current = null;
+            }
             polylineRef.current = null;
             map.remove();
             mapInstanceRef.current = null;
@@ -177,10 +183,27 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
             currentMarkerRef.current.setLatLng(lastPoint);
         }
 
+        // Real-time GPS Accuracy visualization circle
+        if (currentAccuracy !== null && currentAccuracy > 0) {
+            if (!accuracyCircleRef.current) {
+                accuracyCircleRef.current = L.circle(lastPoint, {
+                    radius: currentAccuracy,
+                    color: '#10b981',
+                    fillColor: '#10b981',
+                    fillOpacity: 0.12,
+                    weight: 1.5,
+                    dashArray: '4, 4',
+                }).addTo(map);
+            } else {
+                accuracyCircleRef.current.setLatLng(lastPoint);
+                accuracyCircleRef.current.setRadius(currentAccuracy);
+            }
+        }
+
         if (!map.getBounds().pad(-0.2).contains(lastPoint)) {
             map.panTo(lastPoint, { animate: true, duration: 0.25 });
         }
-    }, [coords]);
+    }, [coords, currentAccuracy]);
 
     // Request Screen Wake Lock when running
     const requestWakeLock = async () => {
@@ -295,6 +318,9 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                 const altitude = typeof rawAlt === 'number' && !isNaN(rawAlt)
                     ? Math.round(rawAlt * 10) / 10
                     : null;
+
+                const accuracyMeters = Math.round(pos.coords.accuracy);
+                setCurrentAccuracy(accuracyMeters);
 
                 const newPoint: GpsPoint = {
                     lat: pos.coords.latitude,
@@ -451,6 +477,42 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         return Math.round(met * userWeightKg * (seconds / 3600));
     };
 
+    const getAccuracyInfo = () => {
+        if (currentAccuracy === null) {
+            return {
+                label: 'Mencari GPS...',
+                badgeClass: 'bg-slate-900/90 border-slate-700 text-slate-300',
+                dotClass: 'bg-slate-400 animate-ping',
+            };
+        }
+        if (currentAccuracy <= 8) {
+            return {
+                label: `Sangat Akurat (±${currentAccuracy}m)`,
+                badgeClass: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400',
+                dotClass: 'bg-emerald-400',
+            };
+        }
+        if (currentAccuracy <= 20) {
+            return {
+                label: `Akurat (±${currentAccuracy}m)`,
+                badgeClass: 'bg-lime-950/90 border-lime-500/50 text-lime-400',
+                dotClass: 'bg-lime-400',
+            };
+        }
+        if (currentAccuracy <= 40) {
+            return {
+                label: `Akurasi Cukup (±${currentAccuracy}m)`,
+                badgeClass: 'bg-amber-950/90 border-amber-500/50 text-amber-400',
+                dotClass: 'bg-amber-400',
+            };
+        }
+        return {
+            label: `Sinyal Lemah (±${currentAccuracy}m)`,
+            badgeClass: 'bg-rose-950/90 border-rose-500/50 text-rose-400',
+            dotClass: 'bg-rose-400 animate-pulse',
+        };
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -506,10 +568,18 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                 <div className="relative h-64 sm:h-80 w-full bg-slate-950">
                     <div ref={mapContainerRef} className="h-full w-full z-0" />
 
+                    {/* Real-time GPS Accuracy Signal Badge */}
+                    <div className="absolute top-3 right-3 z-10">
+                        <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold backdrop-blur-md border shadow-lg transition-all ${getAccuracyInfo().badgeClass}`}>
+                            <span className={`h-2 w-2 rounded-full ${getAccuracyInfo().dotClass}`} />
+                            <span>{getAccuracyInfo().label}</span>
+                        </div>
+                    </div>
+
                     {gpsError && (
-                        <div className="absolute top-3 left-3 right-3 z-10 rounded-xl bg-amber-500/90 p-2.5 text-xs text-slate-950 font-semibold backdrop-blur flex items-center gap-2">
+                        <div className="absolute top-3 left-3 max-w-[60%] z-10 rounded-xl bg-amber-500/95 p-2.5 text-xs text-slate-950 font-semibold backdrop-blur flex items-center gap-2 shadow-lg">
                             <AlertCircle className="h-4 w-4 shrink-0" />
-                            <span>{gpsError}</span>
+                            <span className="truncate">{gpsError}</span>
                         </div>
                     )}
                 </div>

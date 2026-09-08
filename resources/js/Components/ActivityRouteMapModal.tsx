@@ -13,6 +13,9 @@ interface ActivityItem {
     calories_burned: number;
     polyline?: string | null;
     started_at: string;
+    elevation_gain_m?: number | null;
+    max_accuracy_m?: number | null;
+    gps_point_count?: number | null;
 }
 
 interface Props {
@@ -122,8 +125,15 @@ export default function ActivityRouteMapModal({ activity, onClose }: Props) {
             <div className="relative w-full max-w-3xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-4 border border-slate-200">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
-                        <h3 className="font-display font-black text-xl text-slate-900 tracking-wide uppercase">{activity.name}</h3>
-                        <p className="text-xs text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-display font-black text-xl text-slate-900 tracking-wide uppercase">{activity.name}</h3>
+                            {activity.source === 'browser_gps' && (
+                                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                    GPS Web {activity.max_accuracy_m ? `· Akurasi ±${Math.round(activity.max_accuracy_m)}m` : ''}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-slate-400 font-medium flex flex-wrap items-center gap-2 mt-1">
                             <span>{(Number(activity.distance_m || 0) / 1000).toFixed(2)} KM</span>
                             <span>·</span>
                             <span>{formatDuration(activity.duration_seconds)}</span>
@@ -132,6 +142,20 @@ export default function ActivityRouteMapModal({ activity, onClose }: Props) {
                                 <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                                 {activity.calories_burned} KCAL
                             </span>
+                            {activity.elevation_gain_m !== null && activity.elevation_gain_m !== undefined && activity.elevation_gain_m > 0 && (
+                                <>
+                                    <span>·</span>
+                                    <span className="font-bold text-emerald-600">
+                                        +{Math.round(activity.elevation_gain_m)}M CLIMB
+                                    </span>
+                                </>
+                            )}
+                            {activity.gps_point_count && (
+                                <>
+                                    <span>·</span>
+                                    <span>{activity.gps_point_count} titik koordinat</span>
+                                </>
+                            )}
                         </p>
                     </div>
                     <button onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors">

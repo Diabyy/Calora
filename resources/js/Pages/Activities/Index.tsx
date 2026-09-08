@@ -33,6 +33,8 @@ interface ActivityItem {
     elevation_gain_m?: number | null;
     polyline?: string | null;
     started_at: string;
+    max_accuracy_m?: number | null;
+    gps_point_count?: number | null;
 }
 
 interface Props {
@@ -224,7 +226,7 @@ export default function ActivitiesIndex({ activities, stats }: Props) {
                                                     <h4 className="font-display font-black text-lg text-slate-900">{act.name}</h4>
                                                     {act.source === 'browser_gps' && (
                                                         <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                                                            GPS Web
+                                                            GPS Web {act.max_accuracy_m ? `· ±${Math.round(act.max_accuracy_m)}m` : ''}
                                                         </span>
                                                     )}
                                                     {act.source === 'legacy_import' && (
