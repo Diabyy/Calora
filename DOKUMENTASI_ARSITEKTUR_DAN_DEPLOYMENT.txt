@@ -1,0 +1,319 @@
+================================================================================
+          PANDUAN ARSITEKTUR, SISTEM INERTIA.JS, DAN STUDI KASUS DEPLOYMENT
+                             PROJECT CALORA (2026)
+================================================================================
+Dokumen ini disusun sebagai materi pembelajaran mendalam (deep dive) mengenai 
+arsitektur modern aplikasi web berbasis Laravel + Inertia.js (React) dan studi 
+kasus nyata penyelesaian kendala deployment containerized ke platform cloud modern 
+(Docker, Neon PostgreSQL, dan Render.com).
+
+
+================================================================================
+BAB 3: ARSITEKTUR LARAVEL + INERTIA.JS (MONOLITHIC SPA)
+================================================================================
+
+1. MENTAL MODEL: MONOLITHIC SPA VS TRADITIONAL DECOUPLED SPA
+--------------------------------------------------------------------------------
+Di ekosistem JavaScript murni (seperti Next.js, MERN stack, atau React + Express), 
+aplikasi biasanya dibangun secara "Decoupled" (terpisah):
+  - Frontend (FE): Single Page Application murni di-host di Vercel atau Cloudflare Pages.
+  - Backend (BE): REST API atau GraphQL di-host di server terpisah (misal: Render, Railway).
+  - Komunikasi: Menggunakan fetch/axios, JWT token di localStorage/cookies, CORS, 
+    dan pendefinisian schema endpoint API dua kali (di backend dan di frontend).
+
+Calora menggunakan paradigma yang berbeda: MONOLITHIC SPA (via Inertia.js).
+Inertia.js bukanlah framework baru, melainkan "jembatan (adapter)" yang menghubungkan 
+Backend (Laravel) dengan Frontend (React) tanpa membutuhkan REST API terpisah:
+  - Routing dikendalikan 100% oleh Laravel (`routes/web.php`).
+  - Controller Laravel langsung mengembalikan komponen React (`Inertia::render('Dashboard', $data)`).
+  - Validasi form, session auth, CSRF security, dan ORM tetap dikelola oleh Laravel.
+  - Di sisi browser, pengguna tetap mendapatkan pengalaman Single Page Application (SPA) 
+    penuh tanpa reload halaman, dengan performa instan dan animasi mulus.
+
+
+2. INERTIA REQUEST LIFECYCLE (BAGAIMANA DATA MENGALIR)
+--------------------------------------------------------------------------------
+Alur kerja Inertia terdiri dari dua fase utama:
+
+A. Kunjungan Pertama Kali (First Page Load / Full Page Visit)
+   1. Pengguna membuka URL: `https://calora-app.onrender.com/dashboard`.
+   2. Request masuk ke server Laravel, melewati middleware, lalu masuk ke `DashboardController`.
+   3. Controller mengeksekusi method `Inertia::render('Dashboard', [...props])`.
+   4. Laravel me-render template Blade induk (`resources/views/app.blade.php`).
+   5. Di dalam Blade, terdapat directive `@inertia` yang menghasilkan HTML pembungkus:
+      `<div id="app" data-page='{"component":"Dashboard","props":{...},"url":"/dashboard"}'></div>`
+   6. Browser menerima HTML tersebut, mengunduh file JavaScript bundle Vite, lalu React 
+      melakukan "Client-side Hydration" pada div tersebut. Halaman tampil seketika.
+
+B. Navigasi Antar Halaman (Client-Side Navigation via `<Link>`)
+   1. Di dashboard, pengguna mengklik tombol ke menu Nutrition:
+      `<Link href="/nutrition">Nutrition</Link>`
+   2. Inertia mencegat (intercept) event klik browser agar halaman TIDAK me-refresh.
+   3. Inertia mengirimkan request XHR/fetch biasa ke URL `/nutrition` dengan header HTTP khusus:
+      `X-Inertia: true`
+      `X-Inertia-Version: [hash_versi_aset]`
+   4. Ketika server Laravel mendeteksi header `X-Inertia: true`, Laravel TIDAK me-render 
+      HTML Blade lagi. Laravel hanya merespons dengan JSON ringan berisi props data baru.
+   5. Komponen React Inertia di browser menerima JSON tersebut, menukar komponen dari 
+      `Dashboard.tsx` menjadi `Nutrition/Index.tsx`, dan memperbarui URL browser via 
+      History API (`window.history.pushState`).
+   6. Hasilnya: Perpindahan halaman terjadi instan (hanya beberapa milidetik), hemat kuota, 
+      dan tidak ada kedipan putih (zero blank flicker).
+
+C. Mengapa FE dan BE Tidak Bisa Dipisah ke Hosting Berbeda?
+   Karena Inertia mengandalkan session cookies berbasis web Laravel dan server-side 
+   view routing Blade. Komponen React membutuhkan container root Blade dan session 
+   state yang sama. Memisahkan React ke Vercel dan Laravel ke Render akan merusak 
+   mekanisme `Inertia::render()` dan membutuhkan penulisan ulang seluruh controller 
+   menjadi REST API manual.
+
+
+3. ASSET COMPILATION PIPELINE (VITE + LARAVEL)
+--------------------------------------------------------------------------------
+Untuk menyajikan kode React TypeScript (`.tsx`) dan Tailwind CSS ke browser pengguna, 
+aplikasi membutuhkan tahapan kompilasi (Bundling):
+  - Saat Development (`npm run dev`):
+    Vite menyalakan server lokal (HMR) dan membuat file sementara `public/hot`.
+  - Saat Production (`npm run build`):
+    Vite membaca konfigurasi `vite.config.js` dan memproses seluruh komponen React:
+    1. Melakukan Tree-shaking (membuang kode JavaScript yang tidak terpakai).
+    2. Mengompilasi TypeScript menjadi JavaScript ES standar yang kompatibel dengan semua browser.
+    3. Memproses utility classes Tailwind CSS menjadi file CSS produksi yang sangat kecil.
+    4. Menyimpan semua hasil build ke folder:
+       `public/build/assets/app-[hash].js`
+       `public/build/assets/app-[hash].css`
+    5. Menghasilkan peta manifes: `public/build/manifest.json`.
+  - Saat diakses di server production, template Blade membaca `@vite(['resources/js/app.tsx'])` 
+    yang otomatis memetakan path aset ke file berekstensi hash di dalam `manifest.json`.
+
+
+
+================================================================================
+BAB 4: DEEP DIVE STUDI KASUS DEPLOYMENT (DOCKER, NEON PGSQL, DAN RENDER)
+================================================================================
+
+1. KONSEP FILESYSTEM EPHEMERAL & MENGAPA SQLITE PASTI GAGAL DI CLOUD PAAS
+--------------------------------------------------------------------------------
+Di lingkungan lokal laptop Anda, Laravel menggunakan database SQLite:
+`database/database.sqlite`. Ini bekerja sangat baik di lokal karena harddisk laptop Anda 
+bersifat persisten (permanen).
+
+Namun, di platform cloud modern seperti Render, Railway, Heroku, atau AWS ECS:
+  - Container berjalan di atas sistem "Ephemeral Filesystem" (sistem berkas sementara).
+  - Karakteristik Ephemeral Disk:
+    Setiap kali container di-restart, mengalami deploy baru, crash, atau masuk ke mode 
+    "Sleep" (pada Free Tier Render, container akan dimatikan otomatis jika tidak ada trafik 
+    selama 15 menit), SELURUH PERUBAHAN FILE DI DALAM CONTAINER AKAN DIHAPUS dan container 
+    akan dibangun ulang dari Docker Image aslinya.
+  - Bahaya SQLite di Cloud:
+    Jika Anda menyimpan database SQLite di dalam container, maka setiap kali Render 
+    melakukan deploy ulang atau bangun dari mode sleep, database Anda akan ter-reset 
+    menjadi kosong kembali. Seluruh akun pengguna, data kalori, dan latihan akan lenyap.
+
+SOLUSI: DATABASE CLOUD EKSTERNAL (NEON POSTGRESQL)
+Neon (https://neon.tech) adalah Serverless PostgreSQL Database.
+Keunggulan Arsitektur Neon untuk Laravel:
+  1. Pemisahan Compute dan Storage:
+     Data Anda disimpan secara independen di cloud storage terdistribusi, terpisah dari 
+     server komputasi. Data 100% aman dan permanen meskipun aplikasi web di-restart ribuan kali.
+  2. Connection Pooling (PgBouncer):
+     Neon menyediakan URL koneksi khusus ber-port 5432 dengan PgBouncer terpasang otomatis. 
+     Ini sangat krusial bagi PHP, karena PHP membuat koneksi database baru di setiap request web. 
+     PgBouncer mencegah server database kehabisan batas koneksi (connection exhaustion).
+  3. Konfigurasi Koneksi Wajib di Laravel:
+     Di Render Environment Variables, kita menghubungkan Laravel ke Neon menggunakan:
+     - `DB_CONNECTION=pgsql`
+     - `DB_SSLMODE=require`  (Wajib: Neon mewajibkan enkripsi TLS)
+     - `DATABASE_URL=postgresql://[user]:[password]@[host]-pooler.[region].neon.tech/[db]?sslmode=require`
+
+
+2. BEDAH ARSITEKTUR MULTI-STAGE DOCKERFILE
+--------------------------------------------------------------------------------
+Dockerfile yang efisien tidak boleh menggabungkan proses build frontend dengan 
+runtime server produksi. Calora menggunakan teknik "Multi-Stage Build":
+
+--- STAGE 1: Frontend Builder (Node.js 22 Alpine) ---
+```dockerfile
+FROM node:22-alpine AS frontend
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci || npm install
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js tsconfig.json tailwind.config.js postcss.config.js ./
+RUN npm run build
+```
+Fungsi Stage 1:
+- Mengunduh Node.js dan ratusan megabyte folder `node_modules/`.
+- Mengeksekusi `npm run build` untuk menghasilkan bundle statis di `/app/public/build`.
+- SETELAH TAHAP INI SELESAI, SELURUH RUNTIME NODE.JS DAN NODE_MODULES DIBUANG!
+
+--- STAGE 2: Production PHP Runner (PHP 8.4 + Nginx) ---
+```dockerfile
+FROM serversideup/php:8.4-fpm-nginx
+ENV NGINX_WEB_ROOT=/var/www/html/public \
+    NGINX_HTTP_PORT=10000 \
+    PHP_OPCACHE_ENABLE=1 \
+    AUTORUN_LARAVEL_STORAGE_LINK=true \
+    APP_ENV=production \
+    APP_DEBUG=false
+
+WORKDIR /var/www/html
+COPY --chown=www-data:www-data . /var/www/html
+COPY --chown=www-data:www-data --from=frontend /app/public/build /var/www/html/public/build
+
+USER www-data
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+
+USER root
+EXPOSE 10000
+```
+Fungsi Stage 2:
+- Hanya mengambil file hasil build frontend (`public/build`) dari Stage 1 melalui baris:
+  `COPY --from=frontend /app/public/build /var/www/html/public/build`.
+- Menginstall dependensi PHP Composer murni untuk production (`--no-dev`).
+- Menggunakan bendera `--optimize-autoloader --classmap-authoritative`:
+  Perintah ini memindai seluruh class PHP dan menyusun tabel pemetaan statis di memori. 
+  PHP tidak perlu memeriksa keberadaan file di harddisk saat runtime, meningkatkan 
+  kecepatan routing hingga 30-40%.
+- Ukuran image container terpangkas drastis dari ~1.8 GB menjadi hanya ~300 MB.
+
+
+3. ANATOMI ERROR NYATA DAN METODE SOLUSI DEBUGGING DI RENDER
+--------------------------------------------------------------------------------
+Selama proses deployment Calora, kita menghadapi beberapa kode kesalahan sistemik 
+tingkat lanjut (Docker container failure). Berikut analisis mendalamnya:
+
+A. Kasus Error: `nonZeroExit: 126` (Permission Denied / Exec Format Error)
+   - Gejala:
+     Container selesai di-build dengan sukses, namun gagal saat dijalankan dengan status:
+     `reason: { failure: { nonZeroExit: 126 } }`.
+   - Akar Penyebab #1 (Line-Ending Windows CRLF):
+     Skrip shell `entrypoint.sh` dibuat di sistem operasi Windows. Windows menggunakan 
+     karakter baris baru `CRLF` (`\r\n`), sedangkan Linux/Docker mewajibkan `LF` (`\n`). 
+     Saat Linux mengeksekusi baris `#!/bin/sh\r`, kernel Linux mencari interpreter bernama 
+     `/bin/sh\r` (dengan karakter return tak terlihat). Karena berkas tersebut tidak ada, 
+     kernel melempar kesalahan eksekusi dengan Exit Code 126.
+   - Akar Penyebab #2 (Privilege Seccomp Non-Root):
+     Render menjalankan container di bawah isolasi keamanan ketat tanpa hak akses root 
+     penuh. Ketika script entrypoint mencoba menjalankan perintah `chmod -R 777 storage`, 
+     perintah tersebut ditolak oleh sistem operasi Linux karena kepemilikan file berbeda. 
+     Jika script diawali dengan `set -e` (hentikan script jika ada perintah gagal), 
+     maka container langsung mati seketika.
+   - Akar Penyebab #3 (Argument Splitting pada Render `dockerCommand`):
+     Jika parameter `dockerCommand` di dashboard Render diisi nilai string kosong `""`, 
+     Render mengeksekusi container dengan perintah: `docker run [opts] <image> ""`. 
+     Container mencoba mengeksekusi string kosong `""` sebagai biner aplikasi, yang 
+     menghasilkan error `exec: : Permission denied` (Exit Code 126).
+
+B. Kasus Error: `nonZeroExit: 255` (Privileged Port Binding & Health Check Failure)
+   - Gejala:
+     Container berhasil boot selama 9-10 detik, lalu tiba-tiba mati dan status deploy gagal:
+     `reason: { failure: { nonZeroExit: 255 } }`.
+   - Akar Penyebab #1 (Port Privilege < 1024):
+     Di sistem operasi Linux Unix-like, port di bawah 1024 (seperti port 80 untuk HTTP dan 
+     port 443 untuk HTTPS) dikategorikan sebagai "Privileged Ports". Hanya user root asli 
+     yang diizinkan membuka port tersebut.
+     Ketika server web mencoba mengikat port 80/443 di Render, kernel menolak akses 
+     karena container dijalankan dengan user non-root. Server web langsung mengalami panic exit.
+   - Akar Penyebab #2 (Internal Container Healthcheck vs Platform Healthcheck):
+     Beberapa base image memiliki instruksi Docker HEALTHCHECK bawaan yang memeriksa 
+     port metrik tertentu (misalnya `http://localhost:2019/metrics`). Ketika konfigurasi server 
+     menonaktifkan endpoint metrik tersebut, Docker healthcheck mengembalikan exit code 1 
+     secara berulang. Setelah melewati batas toleransi (*retries*), platform cloud menganggap 
+     container telah hang/rusak dan mengirimkan sinyal SIGKILL/SIGTERM (Exit Code 255).
+
+C. Masalah Anti-Pattern: Menjalankan Database Seeder di Startup Container
+   - Di awal, script startup mencoba mengeksekusi: `php artisan migrate --force --seed`.
+   - Masalah:
+     Database Seeder Calora memuat 65 data makanan Indonesia (TKPI) beserta 65 alias 
+     dan perhitungan relasinya. Menjalankan seeding ke database cloud eksternal membutuhkan 
+     waktu 15-20 detik karena latensi jaringan.
+   - Dampak:
+     Platform cloud Render memiliki aturan "Health Check Timeout" (biasanya 30 detik). 
+     Jika dalam 30 detik server web belum selesai membuka port karena masih sibuk melakukan 
+     seeding data, Render akan menganggap aplikasi macet dan membatalkan deployment.
+   - Solusi Benar:
+     Jalankan migrasi skema database dan seeder data SEKALI SAJA secara langsung dari 
+     lingkungan lokal/CI runner ke database Neon:
+     `docker run --rm -e DB_CONNECTION=pgsql -e DATABASE_URL=... calora-prod php artisan migrate --seed`
+     Sedangkan di dalam container production di cloud, server web cukup langsung fokus menyala!
+
+
+4. MENGAPA BERALIH KE `serversideup/php:8.4-fpm-nginx` (STANDAR EMAS LARAVEL)
+--------------------------------------------------------------------------------
+Untuk mengatasi semua masalah port, hak akses, dan stabilitas di atas, kita beralih 
+menggunakan base image resmi `serversideup/php:8.4-fpm-nginx`. 
+
+Mengapa image ini menjadi standar industri untuk Laravel di Docker/PaaS?
+1. S6-Overlay Process Supervisor:
+   Sebuah container Docker secara ideal hanya menjalankan 1 proses (PID 1). Namun aplikasi 
+   Laravel membutuhkan DUA proses agar dapat bekerja maksimal:
+     - Nginx (Web Server performa tinggi untuk file statis dan SSL routing).
+     - PHP-FPM (FastCGI Process Manager untuk mengeksekusi script PHP).
+   Image `serversideup` menyertakan S6-Overlay yang bertindak sebagai supervisor PID 1 
+   resmi yang mengawasi Nginx dan PHP-FPM secara simultan. Jika salah satu worker mati, 
+   S6-Overlay otomatis merestart worker tersebut tanpa mematikan container.
+2. Manajemen Izin File Native (`www-data` UID 33 / GID 33):
+   Image ini dikonfigurasi secara presisi agar seluruh direktori web root (`/var/www/html`) 
+   dan folder penyimpanan Laravel (`storage/`, `bootstrap/cache/`) dimiliki oleh user 
+   `www-data`. Tidak diperlukan perintah `chmod 777` manual yang berisiko.
+3. Dukungan Port Fleksibel via Environment Variable:
+   Nginx di dalam image ini secara otomatis membaca variabel `NGINX_HTTP_PORT=10000` 
+   dan `PORT=10000`. Server web langsung mengikat port 10000 (non-privilege) tanpa 
+   pernah menyentuh port 80/443.
+4. OPcache Aktif Bawaan (`PHP_OPCACHE_ENABLE=1`):
+   Setiap script PHP yang pertama kali dieksekusi akan langsung dikompilasi ke dalam 
+   Opcode (bytecode mesin) dan disimpan di RAM. Request berikutnya tidak perlu melakukan 
+   parsing ulang file PHP, meningkatkan throughput request hingga 3x lipat.
+
+
+5. CHEAT SHEET ENVIRONMENT VARIABLES CALORA DI RENDER (PRODUCTION)
+--------------------------------------------------------------------------------
+Berikut daftar 12 variabel lingkungan (Environment Variables) yang saat ini aktif 
+dan menjaga kelancaran aplikasi Calora di Render:
+
+1. `APP_NAME`
+   Nilai: `Calora`
+   Fungsi: Menamai aplikasi pada email notifikasi dan page title.
+2. `APP_ENV`
+   Nilai: `production`
+   Fungsi: Mematikan mode debug lokal dan mengoptimalkan penanganan error.
+3. `APP_DEBUG`
+   Nilai: `false`
+   Fungsi: Mencegah kebocoran struktur database atau API key saat terjadi error pada pengguna.
+4. `APP_KEY`
+   Nilai: `base64:cJZtWFarOwrkjtTWYVQuNMJ00F33D/QKn5BZq/gdMFM=`
+   Fungsi: Kunci enkripsi simetris 256-bit untuk session cookies dan data sensitif pengguna.
+5. `APP_URL`
+   Nilai: `https://calora-app.onrender.com`
+   Fungsi: Domain root resmi untuk pembuatan tautan rute dan asset URL di browser.
+6. `PORT`
+   Nilai: `10000`
+   Fungsi: Port yang dialokasikan oleh Load Balancer Render untuk menerima trafik web.
+7. `NGINX_HTTP_PORT`
+   Nilai: `10000`
+   Fungsi: Menginstruksikan Nginx untuk mendengarkan trafik HTTP di port 10000.
+8. `DB_CONNECTION`
+   Nilai: `pgsql`
+   Fungsi: Memberitahu Laravel untuk menggunakan driver PostgreSQL (bukan SQLite).
+9. `DB_SSLMODE`
+   Nilai: `require`
+   Fungsi: Memaksa koneksi database terenkripsi SSL/TLS (syarat wajib serverless Neon).
+10. `DATABASE_URL`
+    Nilai: `postgresql://neondb_owner:***@ep-sparkling-snow-b3tz008h-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+    Fungsi: Connection string terpusat ke database Neon PostgreSQL region Singapore via PgBouncer.
+11. `GEMINI_API_KEY`
+    Nilai: `[DIRAHAASIAKAN_TERPASANG_DI_RENDER_ENV]` (Contoh: AQ.Ab8RN6KQXw...)
+    Fungsi: Kunci otentikasi resmi ke Google Generative Language API.
+12. `GEMINI_VISION_MODEL` / `GEMINI_MODEL`
+    Nilai: `gemini-3.5-flash-lite` / `gemini-2.5-flash`
+    Fungsi: Model AI yang bertugas menganalisis foto makanan dan memberikan saran nutrisi.
+
+================================================================================
+                                AKHIR DOKUMEN
+================================================================================
+Dokumen ini dibuat secara otomatis pada 13 September 2026 sebagai aset pengetahuan 
+teknis proyek Calora. Simpan berkas ini sebagai referensi arsitektur dan debugging 
+pada proyek-proyek modern Anda berikutnya.
