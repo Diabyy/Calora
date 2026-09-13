@@ -69,4 +69,7 @@ ENV APP_ENV=production \
 
 EXPOSE 10000
 
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:10000/up || curl -f http://localhost:2019/metrics || exit 1
+
 ENTRYPOINT ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]

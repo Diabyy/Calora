@@ -1,6 +1,6 @@
 {
     skip_install_trust
-    admin off
+    admin localhost:2019
     log {
         output stdout
         format console
@@ -8,11 +8,11 @@
     }
 }
 
-http://:{$PORT:10000} {
+:{$PORT:10000} {
     root * /app/public
     encode zstd br gzip
 
-    # Health check for Render
+    # Health check for Render and internal checks
     respond /up 200
 
     # Max body size for meal camera scans (30MB)
