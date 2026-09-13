@@ -33,6 +33,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy custom configurations
 COPY docker/Caddyfile /etc/frankenphp/Caddyfile
 COPY docker/Caddyfile /etc/caddy/Caddyfile
+COPY docker/Caddyfile /app/Caddyfile
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-calora.ini
 
 # Install composer dependencies without dev packages
@@ -63,8 +64,9 @@ RUN mkdir -p /data/caddy \
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
+    SERVER_NAME=":10000" \
     PORT=10000
 
 EXPOSE 10000
 
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
