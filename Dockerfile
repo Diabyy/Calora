@@ -14,63 +14,25 @@ COPY vite.config.js tsconfig.json tailwind.config.js postcss.config.js ./
 # Compile production assets into public/build
 RUN npm run build
 
-# Stage 2: Production PHP runtime with FrankenPHP (PHP 8.4)
-FROM dunglas/frankenphp:1-php8.4-alpine AS runner
+# Stage 2: Production PHP runtime with Nginx + PHP-FPM (PHP 8.4)
+FROM serversideup/php:8.4-fpm-nginx
 
-# Install PostgreSQL (Neon), bcmath, zip, and opcache
-RUN install-php-extensions \
-    pdo_pgsql \
-    pgsql \
-    bcmath \
-    zip \
-    opcache
+ENV NGINX_WEB_ROOT=/var/www/html/public \
+    NGINX_HTTP_PORT=10000 \
+    PHP_OPCACHE_ENABLE=1 \
+    AUTORUN_LARAVEL_STORAGE_LINK=true \
+    APP_ENV=production \
+    APP_DEBUG=false
 
-WORKDIR /app
+WORKDIR /var/www/html
 
-# Copy Composer binary from official image
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Copy application files with proper web user permissions
+COPY --chown=www-data:www-data . /var/www/html
+COPY --chown=www-data:www-data --from=frontend /app/public/build /var/www/html/public/build
 
-# Copy custom configurations
-COPY docker/Caddyfile /etc/frankenphp/Caddyfile
-COPY docker/Caddyfile /etc/caddy/Caddyfile
-COPY docker/Caddyfile /app/Caddyfile
-COPY docker/php.ini $PHP_INI_DIR/conf.d/99-calora.ini
-
-# Install composer dependencies without dev packages
-COPY composer.json composer.lock ./
+USER www-data
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-# Copy full application files
-COPY . .
-
-# Copy compiled frontend assets from frontend stage
-COPY --from=frontend /app/public/build ./public/build
-
-# Complete composer autoloading
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
-# Create storage symlink
-RUN php artisan storage:link --quiet || true
-
-# Ensure storage and caddy directories exist and have proper permissions
-RUN mkdir -p /data/caddy \
-    /config/caddy \
-    storage/framework/cache/data \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/logs \
-    bootstrap/cache && \
-    chmod -R 777 /data/caddy /config/caddy storage bootstrap/cache
-
-ENV APP_ENV=production \
-    APP_DEBUG=false \
-    SERVER_NAME="http://:10000" \
-    PORT=10000
-
+USER root
 EXPOSE 10000
-
-HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:10000/up || curl -f http://localhost:2019/metrics || exit 1
-
-ENTRYPOINT ["/bin/sh", "-c"]
-CMD ["frankenphp run --config /etc/frankenphp/Caddyfile"]
