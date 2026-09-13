@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calora-shell-v2';
+const CACHE_NAME = 'calora-shell-v3';
 const STATIC_ASSETS = [
   '/',
   '/offline.html',
@@ -113,7 +113,15 @@ self.addEventListener('fetch', (event) => {
   // 3. Default fallback
   event.respondWith(
     caches.match(request).then((cached) => {
-      return cached || fetch(request);
+      return cached || fetch(request).catch(() => {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Koneksi jaringan terputus atau layanan sedang tidak dapat dijangkau.' }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      });
     })
   );
 });

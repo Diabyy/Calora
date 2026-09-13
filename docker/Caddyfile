@@ -1,0 +1,25 @@
+{
+    skip_install_trust
+    admin off
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}
+
+http://:{$PORT:10000} {
+    root * /app/public
+    encode zstd br gzip
+
+    # Health check for Render
+    respond /up 200
+
+    # Max body size for meal camera scans (30MB)
+    request_body {
+        max_size 30MB
+    }
+
+    # Serve static assets or route to Laravel PHP
+    php_server
+}

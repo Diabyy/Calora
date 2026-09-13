@@ -57,13 +57,7 @@ class FoodVisionAiService
 
         $imageData = $this->prepareImage($image);
 
-        /** @var EloquentCollection<int, IndonesianFood> $foods */
-        $foods = Cache::remember('calora:tkpi:foods_with_aliases', now()->addDay(), function () {
-            return IndonesianFood::query()
-                ->with('aliases')
-                ->orderBy('name')
-                ->get();
-        });
+        $foods = $this->getFoods();
         $prompt = $this->buildVisionPrompt($foods);
         $providers = [
             'gemini' => $this->geminiProvider,
@@ -146,6 +140,17 @@ class FoodVisionAiService
             'base64' => base64_encode($contents),
             'mime_type' => $image->getMimeType() ?: 'image/jpeg',
         ];
+    }
+
+    /**
+     * @return EloquentCollection<int, IndonesianFood>
+     */
+    private function getFoods(): EloquentCollection
+    {
+        return IndonesianFood::query()
+            ->with('aliases')
+            ->orderBy('name')
+            ->get();
     }
 
     /**

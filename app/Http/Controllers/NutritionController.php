@@ -78,7 +78,8 @@ class NutritionController extends Controller
                 })
                 ->when($category, fn ($q) => $q->where('category', $category))
                 ->limit(25)
-                ->get();
+                ->get()
+                ->toArray();
         });
 
         return response()->json($foods);

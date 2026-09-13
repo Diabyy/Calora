@@ -12,13 +12,10 @@ export default function Edit({
     return (
         <AuthenticatedLayout
             header={
-                <div>
-                    <h2 className="font-athletic text-3xl sm:text-4xl tracking-tight text-slate-950">
+                <div className="flex items-center gap-2 w-full">
+                    <h1 className="font-athletic text-2xl sm:text-3xl tracking-tight text-slate-950 uppercase leading-none truncate">
                         PROFILE & ACCOUNT
-                    </h2>
-                    <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
-                        Manage your athlete credentials and security
-                    </p>
+                    </h1>
                 </div>
             }
         >

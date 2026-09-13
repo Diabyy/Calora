@@ -73,15 +73,10 @@ export default function Onboarding({ profile }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="font-athletic text-3xl sm:text-4xl tracking-tight text-slate-950">
-                            BODY PROFILE & ENERGY TARGETS
-                        </h2>
-                        <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
-                            Mifflin-St Jeor Formula · Customized Biometrics Engine
-                        </p>
-                    </div>
+                <div className="flex items-center gap-2 w-full">
+                    <h1 className="font-athletic text-2xl sm:text-3xl tracking-tight text-slate-950 uppercase leading-none truncate">
+                        PROFILE & TARGETS
+                    </h1>
                 </div>
             }
         >

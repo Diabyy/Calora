@@ -53,27 +53,45 @@ const Trigger = ({ children }: PropsWithChildren) => {
 const Content = ({
     align = 'right',
     width = '48',
+    direction = 'down',
     contentClasses = 'py-1 bg-white',
     children,
 }: PropsWithChildren<{
     align?: 'left' | 'right';
-    width?: '48';
+    width?: '48' | '56' | '64' | 'full';
+    direction?: 'down' | 'up';
     contentClasses?: string;
 }>) => {
     const { open, setOpen } = useContext(DropDownContext);
 
-    let alignmentClasses = 'origin-top';
+    let alignmentClasses = direction === 'up' ? 'origin-bottom' : 'origin-top';
 
-    if (align === 'left') {
-        alignmentClasses = 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (align === 'right') {
-        alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
+    if (direction === 'up') {
+        if (align === 'left') {
+            alignmentClasses = 'ltr:origin-bottom-left rtl:origin-bottom-right start-0';
+        } else if (align === 'right') {
+            alignmentClasses = 'ltr:origin-bottom-right rtl:origin-bottom-left end-0';
+        }
+    } else {
+        if (align === 'left') {
+            alignmentClasses = 'ltr:origin-top-left rtl:origin-top-right start-0';
+        } else if (align === 'right') {
+            alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
+        }
     }
+
+    const positionClasses = direction === 'up' ? 'bottom-full mb-2.5' : 'top-full mt-2';
 
     let widthClasses = '';
 
     if (width === '48') {
         widthClasses = 'w-48';
+    } else if (width === '56') {
+        widthClasses = 'w-56';
+    } else if (width === '64') {
+        widthClasses = 'w-64';
+    } else if (width === 'full') {
+        widthClasses = 'w-full';
     }
 
     return (
@@ -88,12 +106,12 @@ const Content = ({
                 leaveTo="opacity-0 scale-95"
             >
                 <div
-                    className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
+                    className={`absolute z-50 rounded-2xl shadow-xl ${positionClasses} ${alignmentClasses} ${widthClasses}`}
                     onClick={() => setOpen(false)}
                 >
                     <div
                         className={
-                            `rounded-md ring-1 ring-black ring-opacity-5 ` +
+                            `rounded-2xl ring-1 ring-black/5 ` +
                             contentClasses
                         }
                     >

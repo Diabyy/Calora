@@ -104,35 +104,40 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
     const unlockedCount = achievements.filter((a) => a.is_unlocked).length;
     const totalPoints = achievements.filter((a) => a.is_unlocked).reduce((sum, a) => sum + a.points, 0);
 
+    const progressAction = (
+        <button
+            type="button"
+            onClick={() => setShowWeightModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#c8f169] px-3.5 py-2 text-xs font-black uppercase tracking-wider text-[#111827] shadow-sm hover:bg-white transition-all active:scale-95"
+        >
+            <Scale className="h-3.5 w-3.5 text-slate-900" />
+            Catat Timbangan
+        </button>
+    );
+
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900">
-                            PROGRESS & PERFORMANCE
-                        </h2>
-                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
-                            Read the trend, not just the number
-                        </p>
+                <div className="flex items-center justify-between gap-3 w-full">
+                    <div className="min-w-0">
+                        <h1 className="font-athletic text-2xl sm:text-3xl tracking-tight text-slate-950 uppercase leading-none truncate">
+                            PROGRESS & TREND
+                        </h1>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setShowWeightModal(true)}
-                            className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-all"
-                        >
-                            <Scale className="h-4 w-4" />
-                            Catat Timbangan
-                        </button>
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                        {progressAction}
                     </div>
                 </div>
             }
         >
             <Head title="Progress Tracking & Analytics - Calora" />
 
-            <div className="py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="py-5 sm:py-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+                    <div className="flex sm:hidden justify-end pt-1">
+                        {progressAction}
+                    </div>
                     <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
                         <img src={visualAssets.runner} alt="Atlet berlari untuk mengukur progres" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-40" />
                         <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/95 to-transparent" />

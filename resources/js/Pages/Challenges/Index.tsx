@@ -50,16 +50,11 @@ export default function ChallengesIndex({ challenges }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="font-display font-black text-3xl tracking-tight text-slate-900 flex items-center gap-2">
-                            <Trophy className="h-6 w-6 text-amber-500" />
-                            MONTHLY CHALLENGES
-                        </h2>
-                        <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
-                            Choose a target. Build a streak.
-                        </p>
-                    </div>
+                <div className="flex items-center gap-2 w-full">
+                    <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
+                    <h1 className="font-athletic text-2xl sm:text-3xl tracking-tight text-slate-950 uppercase leading-none truncate">
+                        CHALLENGES
+                    </h1>
                 </div>
             }
         >

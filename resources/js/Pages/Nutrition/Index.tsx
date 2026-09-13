@@ -417,77 +417,85 @@ export default function NutritionIndex({ date, logs, consumed, target }: Props) 
     const carbPercent = Math.min(100, Math.round((consumed.carbs / target.carbs) * 100));
     const fatPercent = Math.min(100, Math.round((consumed.fat / target.fat) * 100));
 
+    const dateNavigationWidget = (
+        <div className="flex items-center gap-2">
+            {date !== getTodayString() && (
+                <button
+                    type="button"
+                    onClick={handleJumpToToday}
+                    className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    title="Kembali ke Hari Ini"
+                >
+                    <RotateCcw className="h-3 w-3 text-emerald-600" />
+                    <span>Hari Ini</span>
+                </button>
+            )}
+
+            <div className="flex items-center gap-1 rounded-xl bg-white border border-slate-200/90 p-1 shadow-sm">
+                <button
+                    type="button"
+                    onClick={() => handleDateChange(-1)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                    title="1 Hari Sebelumnya"
+                    aria-label="1 Hari Sebelumnya"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {/* Clickable Date Label with native hidden Date Picker */}
+                <label className="relative flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-slate-800 cursor-pointer hover:bg-slate-50 rounded-lg transition-colors select-none">
+                    <Calendar className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span className="font-display text-xs sm:text-sm tracking-wide whitespace-nowrap">
+                        {formatHumanDate(date)}
+                    </span>
+                    <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => handleDateSelect(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        aria-label="Pilih Tanggal Kalender"
+                    />
+                </label>
+
+                <button
+                    type="button"
+                    onClick={() => handleDateChange(1)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                    title="1 Hari Berikutnya"
+                    aria-label="1 Hari Berikutnya"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="font-athletic text-3xl sm:text-4xl tracking-tight text-slate-950">
-                            NUTRITION & AI FOOD SCANNER
-                        </h2>
-                        <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
-                            Read the plate. Keep the signal.
-                        </p>
+                <div className="flex items-center justify-between gap-3 w-full">
+                    <div className="min-w-0">
+                        <h1 className="font-athletic text-2xl sm:text-3xl tracking-tight text-slate-950 uppercase leading-none truncate">
+                            NUTRITION & SCANNER
+                        </h1>
                     </div>
 
-                    {/* Date Navigation */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        {date !== getTodayString() && (
-                            <button
-                                type="button"
-                                onClick={handleJumpToToday}
-                                className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-black uppercase tracking-wider text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-1.5 shadow-sm"
-                                title="Kembali ke Hari Ini"
-                            >
-                                <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>Hari Ini</span>
-                            </button>
-                        )}
-
-                        <div className="flex items-center gap-1.5 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-sm">
-                            <button
-                                type="button"
-                                onClick={() => handleDateChange(-1)}
-                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                                title="1 Hari Sebelumnya"
-                                aria-label="1 Hari Sebelumnya"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </button>
-
-                            {/* Clickable Date Label with native hidden Date Picker */}
-                            <label className="relative flex items-center gap-2 px-3 py-1 text-xs font-bold text-slate-800 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors select-none">
-                                <Calendar className="h-4 w-4 text-emerald-600 shrink-0" />
-                                <span className="font-display text-sm tracking-wide whitespace-nowrap">
-                                    {formatHumanDate(date)}
-                                </span>
-                                <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => handleDateSelect(e.target.value)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    aria-label="Pilih Tanggal Kalender"
-                                />
-                            </label>
-
-                            <button
-                                type="button"
-                                onClick={() => handleDateChange(1)}
-                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                                title="1 Hari Berikutnya"
-                                aria-label="1 Hari Berikutnya"
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </button>
-                        </div>
+                    {/* Date Navigation (Desktop in Header) */}
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                        {dateNavigationWidget}
                     </div>
                 </div>
             }
         >
             <Head title="Nutrition & AI Food Scanner - Calora" />
 
-            <div className="py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="py-5 sm:py-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+                    {/* Mobile Date Navigation Widget (Clean below header, not sticky-locked) */}
+                    <div className="flex sm:hidden justify-center pt-1">
+                        {dateNavigationWidget}
+                    </div>
+
                     <section className="relative overflow-hidden rounded-[1.75rem] bg-[#111827] text-white shadow-xl shadow-slate-900/10">
                         <img src={visualAssets.food} alt="Mangkuk makanan segar berwarna-warni" className="absolute inset-y-0 right-0 h-full w-2/5 object-cover opacity-55" />
                         <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/90 to-transparent" />
