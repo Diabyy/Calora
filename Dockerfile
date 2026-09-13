@@ -33,8 +33,6 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy custom configurations
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-calora.ini
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
 # Install composer dependencies without dev packages
 COPY composer.json composer.lock ./
@@ -48,6 +46,9 @@ COPY --from=frontend /app/public/build ./public/build
 
 # Complete composer autoloading
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+
+# Create storage symlink
+RUN php artisan storage:link --quiet || true
 
 # Ensure storage and caddy directories exist and have proper permissions
 RUN mkdir -p /data/caddy \
@@ -65,5 +66,4 @@ ENV APP_ENV=production \
 
 EXPOSE 10000
 
-ENTRYPOINT ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
