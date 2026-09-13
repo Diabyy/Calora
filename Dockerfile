@@ -49,13 +49,15 @@ COPY --from=frontend /app/public/build ./public/build
 # Complete composer autoloading
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
-# Ensure storage directories exist and have proper permissions
-RUN mkdir -p storage/framework/cache/data \
+# Ensure storage and caddy directories exist and have proper permissions
+RUN mkdir -p /data/caddy \
+    /config/caddy \
+    storage/framework/cache/data \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
     bootstrap/cache && \
-    chmod -R 777 storage bootstrap/cache
+    chmod -R 777 /data/caddy /config/caddy storage bootstrap/cache
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
