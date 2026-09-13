@@ -12,13 +12,13 @@ php artisan storage:link --quiet || true
 
 # Handle database setup
 if [ -n "$DB_HOST" ] || [ -n "$DB_URL" ] || [ -n "$DATABASE_URL" ]; then
-    echo "PostgreSQL database detected. Running migrations and seeders..."
-    php artisan migrate --force --seed || echo "Warning: Migration/seed failed, continuing..."
+    echo "PostgreSQL database detected. Running migrations..."
+    php artisan migrate --force || echo "Warning: Migration failed, continuing..."
 elif [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
     echo "SQLite detected. Ensuring database file exists..."
     touch database/database.sqlite
     chmod 666 database/database.sqlite
-    php artisan migrate --force --seed || true
+    php artisan migrate --force || true
 fi
 
 # Optimize Laravel route and view caches
@@ -30,5 +30,10 @@ php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
 
-echo "Calora ready. Launching FrankenPHP on port ${PORT:-10000}..."
-exec frankenphp run --config /etc/caddy/Caddyfile
+echo "Calora setup complete. Launching application..."
+
+if [ $# -gt 0 ] && [ -n "$1" ]; then
+    exec "$@"
+else
+    exec frankenphp run --config /etc/caddy/Caddyfile
+fi
