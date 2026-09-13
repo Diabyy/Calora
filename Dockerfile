@@ -34,7 +34,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-calora.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
 # Install composer dependencies without dev packages
 COPY composer.json composer.lock ./
@@ -63,4 +63,4 @@ ENV APP_ENV=production \
 
 EXPOSE 10000
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
