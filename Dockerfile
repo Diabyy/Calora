@@ -69,4 +69,4 @@ ENV APP_ENV=production \
 
 EXPOSE 10000
 
-CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
+ENTRYPOINT ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
