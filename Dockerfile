@@ -31,6 +31,7 @@ WORKDIR /app
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy custom configurations
+COPY docker/Caddyfile /etc/frankenphp/Caddyfile
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/php.ini $PHP_INI_DIR/conf.d/99-calora.ini
 
