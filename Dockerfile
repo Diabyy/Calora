@@ -64,7 +64,7 @@ RUN mkdir -p /data/caddy \
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    SERVER_NAME=":10000" \
+    SERVER_NAME="http://:10000" \
     PORT=10000
 
 EXPOSE 10000
@@ -72,4 +72,5 @@ EXPOSE 10000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:10000/up || curl -f http://localhost:2019/metrics || exit 1
 
-ENTRYPOINT ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["frankenphp run --config /etc/frankenphp/Caddyfile"]
