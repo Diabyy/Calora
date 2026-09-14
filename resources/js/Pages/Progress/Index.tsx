@@ -54,11 +54,11 @@ interface AchievementItem {
 }
 
 interface Props {
-    profile: {
-        weight_kg: number;
-        goal: string;
-        daily_calorie_target: number;
-    };
+    profile?: {
+        weight_kg?: number;
+        goal?: string;
+        daily_calorie_target?: number;
+    } | null;
     analytics: {
         weight: {
             current: number;
@@ -82,11 +82,17 @@ interface Props {
     achievements: AchievementItem[];
 }
 
-export default function ProgressIndex({ profile, analytics, achievements }: Props) {
+export default function ProgressIndex({ profile, analytics, achievements = [] }: Props) {
     const [showWeightModal, setShowWeightModal] = useState(false);
 
+    const safeProfile = {
+        weight_kg: profile?.weight_kg ?? 65,
+        goal: profile?.goal ?? 'maintain_weight',
+        daily_calorie_target: profile?.daily_calorie_target ?? 2000,
+    };
+
     const { data, setData, post, processing, reset, errors } = useForm({
-        weight_kg: analytics.weight.current || 65,
+        weight_kg: analytics?.weight?.current || safeProfile.weight_kg,
         recorded_at: new Date().toISOString().slice(0, 10),
         notes: '',
     });
@@ -235,7 +241,7 @@ export default function ProgressIndex({ profile, analytics, achievements }: Prop
                             ))}
                         </div>
                     }>
-                        <ProgressChartsSection analytics={analytics} profile={profile}>
+                        <ProgressChartsSection analytics={analytics} profile={safeProfile}>
                             {/* SECTION: ACHIEVEMENTS & BADGES GRID */}
                             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 flex flex-col justify-between">
                                 <div>

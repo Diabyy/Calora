@@ -19,9 +19,15 @@ class ProgressController extends Controller
     /**
      * Display the analytics and progress tracking page.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
+        $profile = $user->profile;
+
+        if (! $profile || ! $profile->onboarding_completed) {
+            return redirect()->route('onboarding.show');
+        }
+
         $analytics = $this->analyticsService->getProgressAnalytics($user);
 
         // All achievements with unlock status
@@ -42,7 +48,11 @@ class ProgressController extends Controller
         });
 
         return Inertia::render('Progress/Index', [
-            'profile' => $user->profile,
+            'profile' => [
+                'weight_kg' => (float) ($profile->weight_kg ?? 65.0),
+                'goal' => (string) ($profile->goal ?? 'maintain_weight'),
+                'daily_calorie_target' => (int) ($profile->daily_calorie_target ?? 2000),
+            ],
             'analytics' => $analytics,
             'achievements' => $allAchievements,
         ]);

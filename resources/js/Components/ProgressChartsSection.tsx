@@ -44,14 +44,18 @@ interface Props {
         calorie_trends: CalorieTrendPoint[];
         activity_trends: ActivityTrendPoint[];
     };
-    profile: {
-        daily_calorie_target: number;
-        goal: string;
-    };
+    profile?: {
+        daily_calorie_target?: number;
+        goal?: string;
+    } | null;
     children?: React.ReactNode;
 }
 
 export default function ProgressChartsSection({ analytics, profile, children }: Props) {
+    const targetGoal = profile?.goal ?? 'maintain_weight';
+    const targetCalories = profile?.daily_calorie_target ?? 2000;
+    const currentWeight = analytics?.weight?.current ?? 65;
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* CHART 1: WEIGHT TRAJECTORY */}
@@ -62,13 +66,13 @@ export default function ProgressChartsSection({ analytics, profile, children }: 
                         <p className="text-xs text-slate-400 font-medium">Riwayat perkembangan timbangan berat badan</p>
                     </div>
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Target: {profile.goal === 'lose_weight' ? `${analytics.weight.current - 5} kg` : 'Maintain'}
+                        Target: {targetGoal === 'lose_weight' ? `${currentWeight - 5} kg` : 'Maintain'}
                     </span>
                 </div>
 
                 <div className="h-72 w-full pt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={analytics.weight.history} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+                        <AreaChart data={analytics?.weight?.history ?? []} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -96,13 +100,13 @@ export default function ProgressChartsSection({ analytics, profile, children }: 
                         <p className="text-xs text-slate-400 font-medium">Kalori Makanan Masuk vs Olahraga Terbakar (7 Hari)</p>
                     </div>
                     <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Target: {profile.daily_calorie_target} kcal
+                        Target: {targetCalories} kcal
                     </span>
                 </div>
 
                 <div className="h-72 w-full pt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={analytics.calorie_trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <BarChart data={analytics?.calorie_trends ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="date" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                             <YAxis tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
@@ -110,7 +114,7 @@ export default function ProgressChartsSection({ analytics, profile, children }: 
                                 contentStyle={{ backgroundColor: '#111827', borderRadius: '14px', color: '#fff', fontSize: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
                             />
                             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                            <ReferenceLine y={profile.daily_calorie_target} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Target', fill: '#f59e0b', fontSize: 10 }} />
+                            <ReferenceLine y={targetCalories} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Target', fill: '#f59e0b', fontSize: 10 }} />
                             <Bar dataKey="consumed" name="Makanan (kcal)" fill="#10b981" radius={[4, 4, 0, 0]} />
                             <Bar dataKey="burned" name="Olahraga (kcal)" fill="#fc4c02" radius={[4, 4, 0, 0]} />
                         </BarChart>

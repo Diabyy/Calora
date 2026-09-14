@@ -62,12 +62,9 @@ class AiAssistantService
     {
         $systemPrompt = $this->buildSystemPrompt($context);
 
-        $contents = [
-            ['role' => 'user', 'parts' => [['text' => "System Instructions: {$systemPrompt}"]]],
-            ['role' => 'model', 'parts' => [['text' => 'Mengerti! Saya Calora AI siap membantu analisa nutrisi dan aktivitas fisik Anda.']]],
-        ];
+        $contents = [];
 
-        foreach (array_slice($history, -4) as $msg) {
+        foreach (array_slice($history, -6) as $msg) {
             $contents[] = [
                 'role' => $msg['sender'] === 'user' ? 'user' : 'model',
                 'parts' => [['text' => $msg['text']]],
@@ -84,10 +81,13 @@ class AiAssistantService
         ])
             ->timeout(20)
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.config('services.gemini.model').':generateContent', [
+                'system_instruction' => [
+                    'parts' => [['text' => $systemPrompt]],
+                ],
                 'contents' => $contents,
                 'generationConfig' => [
-                    'temperature' => 0.4,
-                    'maxOutputTokens' => 600,
+                    'temperature' => 0.7,
+                    'maxOutputTokens' => 800,
                 ],
             ]);
 
@@ -104,26 +104,20 @@ class AiAssistantService
     protected function buildSystemPrompt(array $context): string
     {
         return <<<PROMPT
-Anda adalah Calora AI — asisten ahli gizi olahraga dan pelatih kebugaran pribadi di aplikasi Calora.
-Tagline: "Move. Track. Eat Better."
-Bahasa: Bahasa Indonesia ramah, profesional, ringkas, dan memotivasi.
+Kamu adalah Calora AI — asisten nutrisi dan pelatih kebugaran pribadi yang cerdas, ramah, dan solutif di aplikasi Calora.
+Bicaralah dengan gaya bahasa Indonesia yang luwes, santai, hangat, dan mengalir natural layaknya coach / personal trainer profesional.
 
-Profil Pengguna:
-- Nama: {$context['name']}
-- Target Kebugaran: {$context['goal']}
-- Berat Badan: {$context['weight_kg']} kg
-- Target Kalori Harian: {$context['daily_calorie_target']} kcal
-- Target Protein Harian: {$context['protein_target_g']} g
-- Kalori Masuk Hari Ini: {$context['consumed_calories_today']} kcal
-- Kalori Terbakar Hari Ini: {$context['burned_calories_today']} kcal
-- Sisa Budget Kalori Hari Ini: {$context['remaining_calories_today']} kcal
-- Protein Masuk Hari Ini: {$context['consumed_protein_today']} g
-- Latihan Terakhir: {$context['latest_activity']}
+Pedoman Gaya Jawaban:
+- Jawab secara langsung, relevan, dan mengalir seperti percakapan nyata (seperti ChatGPT / Claude).
+- HINDARI bahasa kaku atau robotik. JANGAN pernah menyematkan template penutup formal, slogan ("Move. Track. Eat Better."), atau format promosi berulang di akhir chat.
+- Berikan saran makanan lokal Indonesia yang mudah ditemui (misal: telur rebus, dada ayam, tempe, tahu, soto, pecel, sayur bening bayam, dll) beserta perkiraan kalori dan protein jika topiknya seputar makanan.
+- Manfaatkan data fisik dan energi pengguna di bawah ini sebagai konteks personal, namun jangan mendiktekan semua angka tersebut jika tidak relevan dengan pertanyaan pengguna.
 
-Aturan Jawaban:
-1. Hubungkan selalu saran makanan dengan kuliner lokal Indonesia yang praktis (cth: Ayam bakar, Dada ayam rebus, Telur rebus, Soto bening, Tempe bacem, Sayur asem).
-2. Jawaban harus langsung to-the-point (maksimal 2-3 paragraf ringkas).
-3. Berikan estimasi kalori dan gram protein untuk setiap makanan yang Anda sarankan.
+Konteks Pengguna ({$context['name']}):
+- Target: {$context['goal']} | Berat: {$context['weight_kg']} kg
+- Target Kalori Harian: {$context['daily_calorie_target']} kcal | Target Protein: {$context['protein_target_g']} g
+- Hari Ini: Makanan Masuk {$context['consumed_calories_today']} kcal, Protein {$context['consumed_protein_today']}g, Olahraga Terbakar {$context['burned_calories_today']} kcal, Sisa Kalori {$context['remaining_calories_today']} kcal.
+- Aktivitas Terakhir: {$context['latest_activity']}
 PROMPT;
     }
 
@@ -134,34 +128,35 @@ PROMPT;
     {
         $q = strtolower($query);
 
-        if (str_contains($q, 'makan') || str_contains($q, 'habis lari') || str_contains($q, 'menu')) {
+        if (str_contains($q, 'makan') || str_contains($q, 'habis lari') || str_contains($q, 'menu') || str_contains($q, 'pagi') || str_contains($q, 'siang') || str_contains($q, 'malam')) {
             $rem = $context['remaining_calories_today'];
 
-            return "Berdasarkan data hari ini, kamu sudah membakar {$context['burned_calories_today']} kcal dan masih memiliki sisa budget {$rem} kcal.\n\n".
-                "Pilihan menu lokal terbaik untuk pemulihan:\n".
-                "1. **Dada Ayam Bakar / Kukus (100g)** + Nasi Merah (120g) + Sayur Bening Bayam (~360 kcal, 32g protein).\n".
-                "2. **Soto Ayam Bening (1 mangkok)** + 1 Butir Telur Rebus (~290 kcal, 24g protein).\n".
-                '3. **Air Kelapa Muda Murni** untuk mengganti elektrolit yang hilang saat olahraga!';
+            return "Berdasarkan aktivitasmu hari ini, kamu masih punya sisa budget sekitar {$rem} kcal.\n\n".
+                "Ini beberapa opsi menu lokal bergizi yang ramah pemulihan:\n".
+                "1. **Dada Ayam Panggang / Kukus (100g)** + Nasi Merah + Sayur Bening Bayam (~360 kcal, 32g protein).\n".
+                "2. **Soto Ayam Bening** + 1 butir telur rebus (~290 kcal, 24g protein).\n".
+                "3. **Pepes Tahu / Tempe** + Tumis Kangkung (~180 kcal, 14g protein).\n\n".
+                'Lagi pengen menu yang berkuah hangat atau yang praktis keringan?';
         }
 
         if (str_contains($q, 'protein') || str_contains($q, 'kurang')) {
             $diff = max(0, $context['protein_target_g'] - $context['consumed_protein_today']);
 
-            return "Asupan proteinmu hari ini {$context['consumed_protein_today']}g dari target {$context['protein_target_g']}g (kurang sekitar {$diff}g).\n\n".
-                "Untuk menutup kekurangan tanpa menambah lemak berlebih, kamu bisa menambahkan:\n".
-                "- 2 butir telur rebus (+12g protein, 150 kcal)\n".
-                "- 100g tempe bacem atau kukus (+14g protein)\n".
-                '- Dada ayam tanpa kulit (+31g protein per 100g).';
+            return "Asupan proteinmu saat ini {$context['consumed_protein_today']}g dari target {$context['protein_target_g']}g (masih perlu sekitar {$diff}g lagi).\n\n".
+                "Pilihan cemilan atau lauk padat protein yang gampang:\n".
+                "- 2 butir telur rebus (+12g protein)\n".
+                "- 1 papan tempe bacem / kukus (+14g protein)\n".
+                '- Susu kedelai murni / greek yogurt (~10-15g protein).';
         }
 
         if (str_contains($q, 'kalori') || str_contains($q, 'sisa') || str_contains($q, 'target')) {
             return "Status energi harianmu:\n".
-                "- Makanan Masuk: {$context['consumed_calories_today']} kcal\n".
-                "- Olahraga Keluar: {$context['burned_calories_today']} kcal\n".
-                "- Sisa Budget Kalori: {$context['remaining_calories_today']} kcal dari target {$context['daily_calorie_target']} kcal.\n\n".
-                'Tubuhmu masih memiliki ruang kalori yang sehat untuk makan malam berprotein tinggi!';
+                "- Makanan masuk: {$context['consumed_calories_today']} kcal\n".
+                "- Olahraga terbakar: {$context['burned_calories_today']} kcal\n".
+                "- Sisa budget kalori: {$context['remaining_calories_today']} kcal dari target harian {$context['daily_calorie_target']} kcal.\n\n".
+                'Masih aman banget buat makan dengan porsi seimbang!';
         }
 
-        return "Halo {$context['name']}! Saya Calora AI. Hari ini kamu sudah mencatat {$context['burned_calories_today']} kcal terbakar dan konsumsi {$context['consumed_calories_today']} kcal. Kamu bisa menanyakan saran menu makan pasca olahraga, analisis makronutrien, atau cara mencapai target {$context['goal']}!";
+        return "Halo {$context['name']}! Ada yang bisa aku bantu seputar nutrisi, menu makan sehat, atau evaluasi latihan fisikmu hari ini?";
     }
 }

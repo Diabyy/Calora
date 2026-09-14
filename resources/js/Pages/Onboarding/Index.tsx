@@ -25,13 +25,24 @@ interface Props {
 
 export default function Onboarding({ profile }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        age: profile?.age || 24,
+        age: profile?.age || (24 as number | string),
         gender: profile?.gender || 'male',
-        height_cm: profile?.height_cm || 170,
-        weight_kg: profile?.weight_kg || 65,
+        height_cm: profile?.height_cm || (170 as number | string),
+        weight_kg: profile?.weight_kg || (65 as number | string),
         activity_level: profile?.activity_level || 'moderately_active',
         goal: profile?.goal || 'maintain_weight',
     });
+
+    const handleNumberInput = (field: 'age' | 'height_cm' | 'weight_kg', rawValue: string) => {
+        if (rawValue === '') {
+            setData(field, '' as any);
+            return;
+        }
+
+        // Clean leading zeroes (e.g. "017" -> "17", while preserving decimals like "0.5")
+        const cleaned = rawValue.replace(/^0+(?=\d)/, '');
+        setData(field, cleaned as any);
+    };
 
     // Real-time client-side preview calculation
     const preview = useMemo(() => {
@@ -141,8 +152,8 @@ export default function Onboarding({ profile }: Props) {
                                         <label className="block text-sm font-medium text-gray-700">Usia (Tahun)</label>
                                         <input
                                             type="number"
-                                            value={data.age}
-                                            onChange={(e) => setData('age', Number(e.target.value))}
+                                            value={data.age ?? ''}
+                                            onChange={(e) => handleNumberInput('age', e.target.value)}
                                             className="mt-2 block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                                             placeholder="Contoh: 24"
                                             min="12"
@@ -157,8 +168,8 @@ export default function Onboarding({ profile }: Props) {
                                         <input
                                             type="number"
                                             step="0.5"
-                                            value={data.height_cm}
-                                            onChange={(e) => setData('height_cm', Number(e.target.value))}
+                                            value={data.height_cm ?? ''}
+                                            onChange={(e) => handleNumberInput('height_cm', e.target.value)}
                                             className="mt-2 block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                                             placeholder="Contoh: 172"
                                             required
@@ -171,8 +182,8 @@ export default function Onboarding({ profile }: Props) {
                                         <input
                                             type="number"
                                             step="0.1"
-                                            value={data.weight_kg}
-                                            onChange={(e) => setData('weight_kg', Number(e.target.value))}
+                                            value={data.weight_kg ?? ''}
+                                            onChange={(e) => handleNumberInput('weight_kg', e.target.value)}
                                             className="mt-2 block w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:ring-emerald-500"
                                             placeholder="Contoh: 68.5"
                                             required

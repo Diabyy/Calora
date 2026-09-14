@@ -58,6 +58,9 @@ export default function Login({
                         value={data.email}
                         className="mt-1.5 block w-full"
                         autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         isFocused={true}
                         placeholder="nama@email.com"
                         onChange={(e) => setData('email', e.target.value)}
