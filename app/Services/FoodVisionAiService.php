@@ -94,7 +94,7 @@ class FoodVisionAiService
                 $result = $this->enrichWithDatabaseMatches($normalizedResponse, $foods);
                 if ($result['status'] === 'detected') {
                     if ($cacheKey) {
-                        Cache::put($cacheKey, $result, now()->addDays(7));
+                        Cache::put($cacheKey, $result, now()->addDays(2));
                     }
 
                     return $result;
