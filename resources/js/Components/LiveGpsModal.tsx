@@ -13,7 +13,10 @@ import {
     AlertCircle,
     CheckCircle2,
     Volume2,
-    VolumeX
+    VolumeX,
+    Navigation,
+    Compass,
+    Mountain
 } from 'lucide-react';
 import L from 'leaflet';
 
@@ -62,6 +65,8 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const [currentAccuracy, setCurrentAccuracy] = useState<number | null>(null);
     const [coords, setCoords] = useState<GpsPoint[]>([]);
     const [gpsError, setGpsError] = useState<string | null>(null);
+    const [latestPosition, setLatestPosition] = useState<[number, number] | null>(null);
+    const [gpsStatus, setGpsStatus] = useState<'searching' | 'ready' | 'weak' | 'error'>('searching');
 
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
@@ -69,6 +74,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const currentMarkerRef = useRef<L.CircleMarker | null>(null);
     const accuracyCircleRef = useRef<L.Circle | null>(null);
     const watchIdRef = useRef<number | null>(null);
+    const previewWatchIdRef = useRef<number | null>(null);
     const wakeLockRef = useRef<any>(null);
     const lastPointRef = useRef<GpsPoint | null>(null);
     const lastAltitudeRef = useRef<number | null>(null);
@@ -76,6 +82,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     const sessionStartedAtRef = useRef<number | null>(null);
     const pausedStartedAtRef = useRef<number | null>(null);
     const pausedSecondsRef = useRef(0);
+    const hasInitialAutoZoomedRef = useRef<boolean>(false);
 
     // Stopwatch timer
     useEffect(() => {
@@ -90,21 +97,120 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         return () => clearInterval(interval);
     }, [status]);
 
-    // Initialize and fully dispose the map with the modal lifecycle.
+    // Helper: update or place Strava pulsing beacon marker on map
+    const updateBeaconMarker = (lat: number, lng: number, accuracy: number) => {
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        // Strava Beacon: solid high-contrast dot with white ring
+        if (!currentMarkerRef.current) {
+            currentMarkerRef.current = L.circleMarker([lat, lng], {
+                radius: 9,
+                color: '#ffffff',
+                weight: 3,
+                fillColor: '#fc4c02',
+                fillOpacity: 1,
+            }).addTo(map);
+        } else {
+            currentMarkerRef.current.setLatLng([lat, lng]);
+        }
+
+        // Accuracy aura ring
+        const auraRadius = Math.max(accuracy, 12);
+        if (!accuracyCircleRef.current) {
+            accuracyCircleRef.current = L.circle([lat, lng], {
+                radius: auraRadius,
+                color: '#fc4c02',
+                fillColor: '#fc4c02',
+                fillOpacity: 0.15,
+                weight: 1.5,
+                dashArray: '3, 4',
+            }).addTo(map);
+        } else {
+            accuracyCircleRef.current.setLatLng([lat, lng]);
+            accuracyCircleRef.current.setRadius(auraRadius);
+        }
+    };
+
+    // Initialize map and pre-fetch location immediately with auto-zoom on discovery
     useEffect(() => {
         if (!isOpen || !mapContainerRef.current) return;
 
-        const map = L.map(mapContainerRef.current, { preferCanvas: true }).setView([0, 0], 2);
+        hasInitialAutoZoomedRef.current = false;
+
+        // Default initial view: Indonesia center overview before GPS resolves
+        const map = L.map(mapContainerRef.current, { 
+            preferCanvas: true,
+            zoomControl: false,
+        }).setView([-2.5489, 118.0149], 5);
         mapInstanceRef.current = map;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+        // CartoDB Voyager Tile Layer: modern, clean vector-style running map
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 20,
+            subdomains: 'abcd',
         }).addTo(map);
 
-        polylineRef.current = L.polyline([], { color: '#10b981', weight: 6, opacity: 0.9 }).addTo(map);
-        window.setTimeout(() => map.invalidateSize(), 0);
+        // Strava signature high-visibility orange polyline
+        polylineRef.current = L.polyline([], { 
+            color: '#fc4c02', 
+            weight: 6, 
+            opacity: 1,
+            lineJoin: 'round',
+            lineCap: 'round',
+        }).addTo(map);
+
+        window.setTimeout(() => map.invalidateSize(), 100);
+
+        // PRE-FETCH GPS IMMEDIATELY: Auto-detect location & Auto-Zoom smoothly to street level!
+        if ('geolocation' in navigator) {
+            setGpsStatus('searching');
+
+            previewWatchIdRef.current = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const acc = Math.round(pos.coords.accuracy);
+
+                    setCurrentAccuracy(acc);
+                    setLatestPosition([lat, lng]);
+                    setGpsStatus(acc <= 30 ? 'ready' : 'weak');
+                    setGpsError(null);
+
+                    if (mapInstanceRef.current) {
+                        updateBeaconMarker(lat, lng, acc);
+
+                        // AUTO ZOOM-IN ONCE DISCOVERED!
+                        if (!hasInitialAutoZoomedRef.current) {
+                            hasInitialAutoZoomedRef.current = true;
+                            mapInstanceRef.current.flyTo([lat, lng], 17, {
+                                animate: true,
+                                duration: 1.2,
+                            });
+                        }
+                    }
+                },
+                (err) => {
+                    setGpsStatus('error');
+                    setGpsError(gpsErrorMessage(err));
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 12000,
+                }
+            );
+        } else {
+            setGpsStatus('error');
+            setGpsError('Geolocation tidak didukung pada browser ini.');
+        }
 
         return () => {
+            if (previewWatchIdRef.current !== null && 'geolocation' in navigator) {
+                navigator.geolocation.clearWatch(previewWatchIdRef.current);
+                previewWatchIdRef.current = null;
+            }
             if (watchIdRef.current !== null && 'geolocation' in navigator) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
@@ -121,6 +227,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         };
     }, [isOpen]);
 
+    // Save session draft
     useEffect(() => {
         if (!isOpen || !['running', 'paused'].includes(status) || typeof window === 'undefined') return;
 
@@ -139,6 +246,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         );
     }, [coords, distanceMeters, isOpen, seconds, sportType, status]);
 
+    // Restore saved session draft if available
     useEffect(() => {
         if (!isOpen || status !== 'idle' || typeof window === 'undefined') return;
 
@@ -164,6 +272,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         }
     }, [isOpen, status]);
 
+    // Update polyline as points accumulate
     useEffect(() => {
         if (!polylineRef.current || !mapInstanceRef.current || coords.length === 0) return;
 
@@ -172,35 +281,9 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         const lastPoint = latLngs[latLngs.length - 1];
         const map = mapInstanceRef.current;
 
-        if (!currentMarkerRef.current) {
-            currentMarkerRef.current = L.circleMarker(lastPoint, {
-                radius: 8,
-                color: '#059669',
-                fillColor: '#10b981',
-                fillOpacity: 1,
-            }).addTo(map);
-        } else {
-            currentMarkerRef.current.setLatLng(lastPoint);
-        }
+        updateBeaconMarker(lastPoint[0], lastPoint[1], currentAccuracy || 10);
 
-        // Real-time GPS Accuracy visualization circle
-        if (currentAccuracy !== null && currentAccuracy > 0) {
-            if (!accuracyCircleRef.current) {
-                accuracyCircleRef.current = L.circle(lastPoint, {
-                    radius: currentAccuracy,
-                    color: '#10b981',
-                    fillColor: '#10b981',
-                    fillOpacity: 0.12,
-                    weight: 1.5,
-                    dashArray: '4, 4',
-                }).addTo(map);
-            } else {
-                accuracyCircleRef.current.setLatLng(lastPoint);
-                accuracyCircleRef.current.setRadius(currentAccuracy);
-            }
-        }
-
-        if (!map.getBounds().pad(-0.2).contains(lastPoint)) {
+        if (!map.getBounds().pad(-0.15).contains(lastPoint)) {
             map.panTo(lastPoint, { animate: true, duration: 0.25 });
         }
     }, [coords, currentAccuracy]);
@@ -232,7 +315,6 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [status]);
 
@@ -252,10 +334,40 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
             return 'Lokasi tidak tersedia. Pastikan GPS perangkat aktif dan coba lagi.';
         }
         if (error.code === error.TIMEOUT) {
-            return 'GPS belum mendapatkan lokasi tepat waktu. Tetap di area terbuka lalu coba lagi.';
+            return 'GPS sedang mencari sinyal. Pindahlah ke area terbuka dan coba lagi.';
         }
 
         return 'Lokasi tidak dapat diperoleh dari perangkat.';
+    };
+
+    // Floating Recenter / Locate Me Handler
+    const handleRecenter = () => {
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        if (latestPosition) {
+            map.flyTo(latestPosition, 17, {
+                animate: true,
+                duration: 0.6,
+            });
+            return;
+        }
+
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    setLatestPosition([lat, lng]);
+                    map.flyTo([lat, lng], 17, {
+                        animate: true,
+                        duration: 0.6,
+                    });
+                },
+                (err) => setGpsError(gpsErrorMessage(err)),
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
     };
 
     // Audio pacing announcement via Web Speech API every completed 1 KM
@@ -298,6 +410,12 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
             return;
         }
 
+        // Clean up preview watch if any
+        if (previewWatchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(previewWatchIdRef.current);
+            previewWatchIdRef.current = null;
+        }
+
         if (sessionStartedAtRef.current === null) {
             sessionStartedAtRef.current = Date.now();
             lastAnnouncedKmRef.current = Math.floor(distanceMeters / 1000);
@@ -321,6 +439,8 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
 
                 const accuracyMeters = Math.round(pos.coords.accuracy);
                 setCurrentAccuracy(accuracyMeters);
+                setLatestPosition([pos.coords.latitude, pos.coords.longitude]);
+                setGpsStatus(accuracyMeters <= 30 ? 'ready' : 'weak');
 
                 const newPoint: GpsPoint = {
                     lat: pos.coords.latitude,
@@ -331,7 +451,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                 };
 
                 if (newPoint.accuracy > MAX_GPS_ACCURACY_METERS) {
-                    setGpsError(`Akurasi GPS masih rendah (${Math.round(newPoint.accuracy)}m). Menunggu sinyal lebih baik.`);
+                    setGpsError(`Akurasi GPS masih rendah (±${Math.round(newPoint.accuracy)}m). Menunggu sinyal lebih stabil.`);
                     return;
                 }
 
@@ -348,22 +468,22 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                         newPoint.lng,
                     );
                     if (segmentDistance > MAX_GPS_JUMP_METERS) {
-                        setGpsError('Perpindahan GPS tidak wajar diabaikan. Menunggu titik berikutnya.');
+                        setGpsError('Perpindahan titik terlalu ekstrem. Menunggu sinyal berikutnya.');
                         return;
                     }
 
                     lastPointRef.current = newPoint;
-                    if (segmentDistance <= 1) {
+                    if (segmentDistance <= 1.2) {
                         return;
                     }
 
                     setDistanceMeters((distance) => distance + segmentDistance);
 
-                    // Calculate elevation gain
+                    // Calculate elevation climb
                     if (altitude !== null) {
                         if (lastAltitudeRef.current !== null) {
                             const altDiff = altitude - lastAltitudeRef.current;
-                            if (altDiff > 1.2 && altDiff < 100) {
+                            if (altDiff > 1.2 && altDiff < 80) {
                                 setElevationGainMeters((prev) => Math.round((prev + altDiff) * 10) / 10);
                             }
                         }
@@ -380,6 +500,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
                 setCoords((previous) => [...previous, newPoint]);
             },
             (err) => {
+                setGpsStatus('error');
                 setGpsError(gpsErrorMessage(err));
             },
             {
@@ -409,7 +530,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
     // FINISH & SAVE ACTIVITY
     const handleFinish = () => {
         if (coords.length === 0 || sessionStartedAtRef.current === null) {
-            setGpsError('Belum ada titik GPS yang valid untuk disimpan.');
+            setGpsError('Belum ada lintasan GPS yang terekam untuk disimpan.');
             return;
         }
 
@@ -425,7 +546,7 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         const sportTitles = {
             running: 'Sesi Lari Outdoor',
             cycling: 'Sesi Bersepeda',
-            walking: 'Sesi Jalan Kaki',
+            walking: 'Sesi Jalan Santai',
         };
 
         router.post(
@@ -477,231 +598,259 @@ export default function LiveGpsModal({ isOpen, onClose, userWeightKg = 65 }: Pro
         return Math.round(met * userWeightKg * (seconds / 3600));
     };
 
-    const getAccuracyInfo = () => {
-        if (currentAccuracy === null) {
-            return {
-                label: 'Mencari GPS...',
-                badgeClass: 'bg-slate-900/90 border-slate-700 text-slate-300',
-                dotClass: 'bg-slate-400 animate-ping',
-            };
+    const getGpsSignalBadge = () => {
+        if (gpsStatus === 'searching' || currentAccuracy === null) {
+            return (
+                <div className="flex items-center gap-1.5 rounded-full bg-slate-900/85 px-3 py-1 text-[10px] font-bold text-slate-300 border border-slate-700 backdrop-blur shadow-md">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>Mencari GPS...</span>
+                </div>
+            );
         }
-        if (currentAccuracy <= 8) {
-            return {
-                label: `Sangat Akurat (±${currentAccuracy}m)`,
-                badgeClass: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400',
-                dotClass: 'bg-emerald-400',
-            };
+        if (currentAccuracy <= 15) {
+            return (
+                <div className="flex items-center gap-1.5 rounded-full bg-[#111827]/90 px-3 py-1 text-[10px] font-black text-emerald-400 border border-emerald-500/40 backdrop-blur shadow-md">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    <span>GPS Siap (±{currentAccuracy}m)</span>
+                </div>
+            );
         }
-        if (currentAccuracy <= 20) {
-            return {
-                label: `Akurat (±${currentAccuracy}m)`,
-                badgeClass: 'bg-lime-950/90 border-lime-500/50 text-lime-400',
-                dotClass: 'bg-lime-400',
-            };
+        if (currentAccuracy <= 35) {
+            return (
+                <div className="flex items-center gap-1.5 rounded-full bg-[#111827]/90 px-3 py-1 text-[10px] font-black text-lime-400 border border-lime-500/40 backdrop-blur shadow-md">
+                    <span className="h-2 w-2 rounded-full bg-lime-400" />
+                    <span>Sinyal GPS (±{currentAccuracy}m)</span>
+                </div>
+            );
         }
-        if (currentAccuracy <= 40) {
-            return {
-                label: `Akurasi Cukup (±${currentAccuracy}m)`,
-                badgeClass: 'bg-amber-950/90 border-amber-500/50 text-amber-400',
-                dotClass: 'bg-amber-400',
-            };
-        }
-        return {
-            label: `Sinyal Lemah (±${currentAccuracy}m)`,
-            badgeClass: 'bg-rose-950/90 border-rose-500/50 text-rose-400',
-            dotClass: 'bg-rose-400 animate-pulse',
-        };
+        return (
+            <div className="flex items-center gap-1.5 rounded-full bg-rose-950/90 px-3 py-1 text-[10px] font-black text-rose-400 border border-rose-500/40 backdrop-blur shadow-md">
+                <span className="h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+                <span>Sinyal Lemah (±{currentAccuracy}m)</span>
+            </div>
+        );
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-            <div className="relative w-full max-w-2xl rounded-3xl bg-slate-900 border border-slate-800 text-white shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                    <div className="flex items-center gap-2.5">
-                        <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-ping" />
-                        <h3 className="font-bold text-base">Live Web GPS Tracker</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-4 backdrop-blur-md">
+            <div className="relative w-full max-w-lg rounded-3xl bg-[#111827] border border-white/10 text-white shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+                
+                {/* Strava Running Top Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#111827]">
+                    {/* Left: Close Button */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (status === 'running') {
+                                handlePause();
+                            }
+                            onClose();
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition active:scale-95"
+                        aria-label="Tutup GPS Tracker"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+
+                    {/* Center: Strava Sport Switcher Tabs */}
+                    <div className="flex items-center gap-1 rounded-full bg-white/5 p-1 border border-white/10">
+                        {(['running', 'cycling', 'walking'] as const).map((type) => (
+                            <button
+                                key={type}
+                                type="button"
+                                disabled={status !== 'idle'}
+                                onClick={() => setSportType(type)}
+                                className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider transition-all ${
+                                    sportType === type
+                                        ? 'bg-[#fc4c02] text-white shadow-md'
+                                        : 'text-slate-400 hover:text-white disabled:opacity-50'
+                                }`}
+                            >
+                                {type === 'running' ? 'Lari' : type === 'cycling' ? 'Sepeda' : 'Jalan'}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Audio Pacing Voice Toggle */}
-                        <button
-                            type="button"
-                            onClick={() => setVoiceEnabled((prev) => !prev)}
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                                voiceEnabled
-                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-slate-800 text-slate-400 border border-slate-700'
-                            }`}
-                            title={voiceEnabled ? 'Pemberitahuan suara aktif tiap 1 KM' : 'Pemberitahuan suara dimatikan'}
-                        >
-                            {voiceEnabled ? (
-                                <>
-                                    <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
-                                    <span>Voice On</span>
-                                </>
-                            ) : (
-                                <>
-                                    <VolumeX className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>Mute</span>
-                                </>
-                            )}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                if (status === 'running') {
-                                    handlePause();
-                                }
-                                onClose();
-                            }}
-                            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                    </div>
+                    {/* Right: Audio Voice Pacing Toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setVoiceEnabled((prev) => !prev)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-95 ${
+                            voiceEnabled
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-white/5 text-slate-400 border border-white/10'
+                        }`}
+                        title={voiceEnabled ? 'Panduan Suara Aktif Tiap 1 KM' : 'Panduan Suara Dinonaktifkan'}
+                    >
+                        {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                    </button>
                 </div>
 
-                {/* Leaflet Map Canvas */}
-                <div className="relative h-64 sm:h-80 w-full bg-slate-950">
+                {/* Leaflet Live Map Canvas */}
+                <div className="relative h-60 sm:h-72 w-full bg-slate-950 overflow-hidden">
                     <div ref={mapContainerRef} className="h-full w-full z-0" />
 
-                    {/* Real-time GPS Accuracy Signal Badge */}
-                    <div className="absolute top-3 right-3 z-10">
-                        <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold backdrop-blur-md border shadow-lg transition-all ${getAccuracyInfo().badgeClass}`}>
-                            <span className={`h-2 w-2 rounded-full ${getAccuracyInfo().dotClass}`} />
-                            <span>{getAccuracyInfo().label}</span>
-                        </div>
+                    {/* GPS Signal Status Badge */}
+                    <div className="absolute top-3 left-3 z-20">
+                        {getGpsSignalBadge()}
                     </div>
 
+                    {/* Floating Strava Recenter / Locate Me Button */}
+                    <button
+                        type="button"
+                        onClick={handleRecenter}
+                        className="absolute bottom-3 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111827]/90 text-white border border-white/20 shadow-xl backdrop-blur-md hover:bg-slate-800 active:scale-95 transition-all"
+                        title="Pusatkan ke Posisi Saya Sekarang"
+                        aria-label="Pusatkan Lokasi GPS"
+                    >
+                        <Navigation className="h-4 w-4 text-[#fc4c02] fill-[#fc4c02]" />
+                    </button>
+
+                    {/* GPS Error Toast Notification */}
                     {gpsError && (
-                        <div className="absolute top-3 left-3 max-w-[60%] z-10 rounded-xl bg-amber-500/95 p-2.5 text-xs text-slate-950 font-semibold backdrop-blur flex items-center gap-2 shadow-lg">
+                        <div className="absolute bottom-3 left-3 right-16 z-20 rounded-xl bg-amber-500/95 px-3 py-2 text-xs font-bold text-slate-950 shadow-lg backdrop-blur flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 shrink-0" />
                             <span className="truncate">{gpsError}</span>
                         </div>
                     )}
                 </div>
 
-                {/* Nike NRC Style HUD Live Metrics */}
-                <div
-                    className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-slate-950 border-t border-slate-800 pb-safe"
-                    style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+                {/* Strava Telemetry HUD & Controls */}
+                <div 
+                    className="p-5 sm:p-6 bg-[#0f172a] space-y-5 border-t border-white/10"
+                    style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
                 >
-                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center">
-                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
-                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">WAKTU</span>
-                            <p className="font-athletic text-2xl sm:text-4xl text-white mt-0.5 sm:mt-1 truncate">{formatTimer(seconds)}</p>
-                        </div>
-
-                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
-                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">JARAK</span>
-                            <p className="font-athletic text-2xl sm:text-4xl text-emerald-400 mt-0.5 sm:mt-1 truncate">
+                    {/* Primary Hero Metric: DISTANCE (KM) */}
+                    <div className="text-center">
+                        <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[#fc4c02]">
+                            JARAK TEMPUH
+                        </span>
+                        <div className="flex items-baseline justify-center gap-1.5 mt-0.5">
+                            <span className="font-athletic text-6xl sm:text-7xl font-black text-white leading-none tracking-tight">
                                 {(distanceMeters / 1000).toFixed(2)}
+                            </span>
+                            <span className="font-athletic text-2xl font-black text-slate-400">
+                                KM
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Secondary Telemetry Grid (Time, Pace, Calories) */}
+                    <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-center">
+                        <div>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                WAKTU
+                            </span>
+                            <p className="font-athletic text-2xl sm:text-3xl font-black text-white mt-0.5">
+                                {formatTimer(seconds)}
                             </p>
-                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
-                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">PACE</span>
-                            <p className="font-athletic text-2xl sm:text-4xl text-sky-400 mt-0.5 sm:mt-1 truncate">{currentPace()}</p>
-                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">/KM</span>
+                        <div>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                PACE RATA2
+                            </span>
+                            <p className="font-athletic text-2xl sm:text-3xl font-black text-[#c8f169] mt-0.5">
+                                {currentPace()}
+                            </p>
+                            <span className="text-[9px] font-black text-slate-500 block">/KM</span>
                         </div>
 
-                        <div className="rounded-2xl bg-slate-900/90 p-2 sm:p-3.5 border border-slate-800 min-w-0">
-                            <span className="text-[9px] sm:text-[10px] uppercase font-black text-slate-400 tracking-wider sm:tracking-widest block truncate">KALORI</span>
-                            <p className="font-athletic text-2xl sm:text-4xl text-amber-400 mt-0.5 sm:mt-1 truncate">{estimatedCalories()}</p>
-                            <span className="text-[8px] sm:text-[9px] font-black text-slate-500 block tracking-wider sm:tracking-widest">KCAL</span>
+                        <div>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                KALORI
+                            </span>
+                            <p className="font-athletic text-2xl sm:text-3xl font-black text-amber-400 mt-0.5">
+                                {estimatedCalories()}
+                            </p>
+                            <span className="text-[9px] font-black text-slate-500 block">KCAL</span>
                         </div>
                     </div>
 
                     {/* Elevation Telemetry Strip */}
                     {elevationGainMeters > 0 && (
-                        <div className="flex items-center justify-between rounded-xl bg-slate-900/60 px-4 py-2 border border-slate-800/80 text-xs">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                Total Elevasi Mendaki (Climb)
+                        <div className="flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/5 text-xs">
+                            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                <Mountain className="h-3.5 w-3.5 text-emerald-400" />
+                                Elevasi Mendaki (Climb)
                             </span>
-                            <div className="flex items-baseline gap-1">
-                                <span className="font-metric text-lg text-emerald-400 font-bold">+{Math.round(elevationGainMeters)}</span>
-                                <span className="text-[10px] font-bold text-slate-400">M</span>
-                            </div>
+                            <span className="font-metric text-sm font-bold text-emerald-400">
+                                +{Math.round(elevationGainMeters)} m
+                            </span>
                         </div>
                     )}
 
-                    {/* Sport Type Selector when idle */}
-                    {status === 'idle' && (
-                        <div className="grid grid-cols-3 gap-2.5">
-                            {(['running', 'cycling', 'walking'] as const).map((type) => (
-                                <button
-                                    key={type}
-                                    type="button"
-                                    onClick={() => setSportType(type)}
-                                    className={`py-3 px-3 rounded-2xl border text-xs font-athletic text-base tracking-wider transition-all ${
-                                        sportType === type
-                                            ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-500/10'
-                                            : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:bg-slate-850'
-                                    }`}
-                                >
-                                    {type === 'running' ? 'LARI OUTDOOR' : type === 'cycling' ? 'BERSEPEDA' : 'JALAN SANTAI'}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Controls Actions */}
-                    <div className="flex items-center gap-3">
+                    {/* Strava Circular Action Buttons */}
+                    <div className="pt-1">
                         {status === 'idle' && (
                             <button
+                                type="button"
                                 onClick={handleStart}
-                                className="w-full rounded-2xl bg-emerald-500 py-4 font-athletic text-xl tracking-wider text-slate-950 shadow-xl shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 transform active:scale-98"
+                                className="group relative flex w-full items-center justify-center gap-3 rounded-full bg-[#fc4c02] py-4 text-base sm:text-lg font-black uppercase tracking-wider text-white shadow-2xl shadow-[#fc4c02]/40 hover:bg-[#e03a00] active:scale-98 transition-all"
                             >
-                                <Play className="h-5 w-5 fill-slate-950" />
-                                MULAI AKTIVITAS SEKARANG
+                                <Play className="h-6 w-6 fill-current" />
+                                <span>START ({sportType.toUpperCase()})</span>
                             </button>
                         )}
 
                         {status === 'running' && (
-                            <>
+                            <div className="flex flex-col items-center justify-center">
                                 <button
+                                    type="button"
                                     onClick={handlePause}
-                                    className="flex-1 rounded-2xl bg-amber-500 py-4 font-athletic text-lg tracking-wider text-slate-950 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-md"
+                                    className="flex h-20 w-20 items-center justify-center rounded-full bg-[#fc4c02] text-white shadow-2xl shadow-[#fc4c02]/40 hover:scale-105 active:scale-95 transition-transform"
+                                    title="Jeda Lari (Pause)"
+                                    aria-label="Jeda Lari"
                                 >
-                                    <Pause className="h-5 w-5 fill-slate-950" />
-                                    JEDA (PAUSE)
+                                    <Pause className="h-8 w-8 fill-current" />
                                 </button>
-                                <button
-                                    onClick={handleFinish}
-                                    className="flex-1 rounded-2xl bg-rose-600 py-4 font-athletic text-lg tracking-wider text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2 shadow-md"
-                                >
-                                    <Square className="h-5 w-5 fill-white" />
-                                    SELESAI & SIMPAN
-                                </button>
-                            </>
+                                <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    TEKAN UNTUK JEDA
+                                </span>
+                            </div>
                         )}
 
                         {status === 'paused' && (
-                            <>
-                                <button
-                                    onClick={handleResume}
-                                    className="flex-1 rounded-2xl bg-emerald-500 py-4 font-athletic text-lg tracking-wider text-slate-950 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-md"
-                                >
-                                    <Play className="h-5 w-5 fill-slate-950" />
-                                    LANJUTKAN
-                                </button>
-                                <button
-                                    onClick={handleFinish}
-                                    className="flex-1 rounded-2xl bg-rose-600 py-4 font-athletic text-lg tracking-wider text-white hover:bg-rose-500 transition-all flex items-center justify-center gap-2 shadow-md"
-                                >
-                                    <Square className="h-5 w-5 fill-white" />
-                                    SELESAI
-                                </button>
-                            </>
+                            <div className="flex items-center justify-center gap-10">
+                                {/* Resume Button (Green Circular) */}
+                                <div className="flex flex-col items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleResume}
+                                        className="flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-full bg-[#c8f169] text-[#111827] shadow-xl shadow-lime-900/30 hover:scale-105 active:scale-95 transition-transform"
+                                        title="Lanjutkan Lari"
+                                        aria-label="Lanjutkan Sesi Lari"
+                                    >
+                                        <Play className="h-7 w-7 fill-current ml-0.5" />
+                                    </button>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-[#c8f169]">
+                                        LANJUTKAN
+                                    </span>
+                                </div>
+
+                                {/* Finish Button (Rose Circular) */}
+                                <div className="flex flex-col items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleFinish}
+                                        className="flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-full bg-rose-600 text-white shadow-xl shadow-rose-900/40 hover:scale-105 active:scale-95 transition-transform"
+                                        title="Selesai & Simpan"
+                                        aria-label="Selesai & Simpan"
+                                    >
+                                        <Square className="h-6 w-6 fill-current" />
+                                    </button>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">
+                                        SELESAI
+                                    </span>
+                                </div>
+                            </div>
                         )}
                     </div>
 
-                    <p className="text-[11px] text-slate-500 text-center font-medium">
-                        Screen Wake Lock otomatis aktif agar layar HP tetap menyala selama aktivitas berjalan.
+                    <p className="text-[10px] text-slate-500 text-center font-medium">
+                        Layar akan tetap menyala otomatis selama aktivitas lari berlangsung.
                     </p>
                 </div>
             </div>

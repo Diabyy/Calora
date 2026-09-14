@@ -92,25 +92,28 @@ export default function ActivityRouteMapModal({ activity, onClose }: Props) {
         const coords = decodePolyline(activity.polyline);
         if (coords.length === 0) return;
 
-        const map = L.map(mapContainerRef.current).setView(coords[0], 14);
+        const map = L.map(mapContainerRef.current, { preferCanvas: true }).setView(coords[0], 14);
         mapInstanceRef.current = map;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 20,
+            subdomains: 'abcd',
         }).addTo(map);
 
         const polylineLayer = L.polyline(coords, {
-            color: '#10b981',
-            weight: 5,
-            opacity: 0.9,
+            color: '#fc4c02',
+            weight: 6,
+            opacity: 1,
             lineJoin: 'round',
+            lineCap: 'round',
         }).addTo(map);
 
-        map.fitBounds(polylineLayer.getBounds(), { padding: [30, 30] });
+        map.fitBounds(polylineLayer.getBounds(), { padding: [35, 35] });
 
-        // Start & Finish markers
-        L.circleMarker(coords[0], { radius: 7, color: '#059669', fillColor: '#34d399', fillOpacity: 1 }).addTo(map);
-        L.circleMarker(coords[coords.length - 1], { radius: 7, color: '#dc2626', fillColor: '#f87171', fillOpacity: 1 }).addTo(map);
+        // Start (Emerald) & Finish (Strava Red) markers with clean white rings
+        L.circleMarker(coords[0], { radius: 8, color: '#ffffff', weight: 2.5, fillColor: '#10b981', fillOpacity: 1 }).addTo(map);
+        L.circleMarker(coords[coords.length - 1], { radius: 8, color: '#ffffff', weight: 2.5, fillColor: '#fc4c02', fillOpacity: 1 }).addTo(map);
 
         return () => {
             if (mapInstanceRef.current) {
